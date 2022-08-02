@@ -1,0 +1,184 @@
+@page "/playerlist"
+@inject IHttpClientFactory ClientFactory;
+@using System.Text.Json;
+@using System.Text.Json.Serialization;
+
+<h1>Player List</h1>
+
+@if (getPlayersError == true || getPositionsError == true)
+{
+    <p>Unable to get players oe positions from the API This is bad. 👎</p>
+}
+
+@if (shouldRender == false)
+{
+    <div class="row px-3">
+        <div class="col-md-4 p-3"></div>
+        <div class="col-md-4 p-3">
+            <RadzenCard>
+                <h4 class="mb-4">Getting Players from the API</h4>
+                <RadzenProgressBar Value="100" ShowValue="false" Mode="ProgressBarMode.Indeterminate" />
+            </RadzenCard>
+        </div>
+        <div class="col-md-4 p-3"></div>
+    </div>
+}
+else
+{
+    // This is where all the good stuff happens.
+    <div>@players.Count() players found.</div>
+    <RadzenDataGrid AllowFiltering="true" AllowColumnResize="true" FilterMode="FilterMode.Advanced" AllowPaging="false" AllowSorting="true" Data="@players" TItem="Data.FootballPlayer" ColumnWidth="300px" LogicalFilterOperator="LogicalFilterOperator.Or" RowRender="@RowRender">
+        <Columns>
+            <RadzenDataGridColumn TItem="Data.FootballPlayer" Property="Name" Filterable="false" Title="Name" Frozen="true" Width="150px" TextAlign="TextAlign.Center">
+                <Template Context="data">
+                    <a href="/player/@data.Id">@data.Name</a>
+                </Template>
+            </RadzenDataGridColumn>
+            <RadzenDataGridColumn TItem="Data.FootballPlayer" Property="Position" Title="Position" Width="125px" Filterable="true">
+                <FilterTemplate>
+                    <RadzenDropDown @bind-Value="@currentPosition" TextProperty="Text" ValueProperty="Value" Style="width:100%" Change=@OnChangePosition Data="@positions" />
+                </FilterTemplate>
+            </RadzenDataGridColumn>
+            <RadzenDataGridColumn TItem="Data.FootballPlayer" Property="Team" Title="Team" Width="150px" />
+            <RadzenDataGridColumn TItem="Data.FootballPlayer" Property="Rank" Title="Rank" Filterable="false" Width="150px" />
+            <RadzenDataGridColumn TItem="Data.FootballPlayer" Property="ADP" Title="ADP" Filterable="false" FormatString="{0:0.00}" Width="150px" />
+            <RadzenDataGridColumn TItem="Data.FootballPlayer" Property="ProjectedFantasyPoints" Filterable="false" Title="Proj Pts." Width="150px" />
+            <RadzenDataGridColumn TItem="Data.FootballPlayer" Property="AuctionValue" Filterable="false" Title="Auction Value" Width="150px" />
+            <RadzenDataGridColumn TItem="Data.FootballPlayer" Title="" Filterable="false" Sortable="false" TextAlign="TextAlign.Center">
+                <Template Context="data">
+                    @if (!data.IsAvailable && !data.IsOnMyTeam)
+                    {
+                        <button class="btn btn-primary" @onclick="@(async e => SetPlayerAvailableAsync(data))">Return</button>
+                    }
+
+                    @if(data.IsOnMyTeam)
+                    {
+                        <button class="btn btn-primary" @onclick="@(async e => SetPlayerAvailableAsync(data))">Reset</button>
+                    }
+                    @if(data.IsAvailable)
+                    {
+                        <button class="btn btn-warning" @onclick="@(async e => SetPlayerUnavailableAsync(data))">Taken</button>
+                        <button class="btn btn-success" @onclick="@(async e => await AssignPlayerToMyTeamAsync(data))">Add</button>
+                    }
+                </Template>
+            </RadzenDataGridColumn>
+        </Columns>
+    </RadzenDataGrid>
+}
+
+
+@code {
+    private IEnumerable<Data.FootballPlayer> players = new List<Data.FootballPlayer>();
+    private List<string> positions = new List<string>();
+    private string currentPosition = String.Empty;
+    private bool getPlayersError;
+    private bool getPositionsError;
+    private bool shouldRender;
+
+    protected override bool ShouldRender() => shouldRender;
+
+    protected override async Task OnInitializedAsync()
+    {
+        // I basically took this right from: https://docs.microsoft.com/en-us/aspnet/core/blazor/call-web-api?view=aspnetcore-6.0&pivots=server
+        var playersRequest = new HttpRequestMessage(HttpMethod.Get, "http://localhost:7071/api/players/");
+        var positionsRequest = new HttpRequestMessage(HttpMethod.Get, "http://localhost:7071/api/positions/");
+
+        var client = ClientFactory.CreateClient();
+
+        var playersResponse = await client.SendAsync(playersRequest);
+
+        if (playersResponse.IsSuccessStatusCode)
+        {
+            using var responseStream = await playersResponse.Content.ReadAsStreamAsync();
+            players = await JsonSerializer.DeserializeAsync<List<Data.FootballPlayer>>(responseStream);
+        }
+        else
+        {
+            getPlayersError = true;
+        }
+
+        var positionsResponse = await client.SendAsync(positionsRequest);
+        if (positionsResponse.IsSuccessStatusCode)
+        {
+            using var responseStream = await positionsResponse.Content.ReadAsStreamAsync();
+            positions = await JsonSerializer.DeserializeAsync<List<string>>(responseStream);
+            if(!positions.Contains("All"))
+            {
+                positions.Add("All");
+            }
+        }
+        else
+        {
+            getPositionsError = true;
+        }
+
+        shouldRender = true;
+    }
+
+    private async Task<bool> SetPlayerAvailableAsync(Data.FootballPlayer player)
+    {
+        player.IsAvailable = true;
+        player.IsOnMyTeam = false;
+        var status = await UpdatePlayer(player);
+        return status;
+    }
+
+    private async Task<bool> SetPlayerUnavailableAsync(Data.FootballPlayer player)
+    {
+        player.IsAvailable = false;
+        player.IsOnMyTeam = false;
+        var status = await UpdatePlayer(player);
+        return status;
+    }
+
+    private async Task<bool> AssignPlayerToMyTeamAsync(Data.FootballPlayer player)
+    {
+        player.IsOnMyTeam = true;
+        player.IsAvailable = false;
+        var status = await UpdatePlayer(player);
+        return status;
+    }
+
+    public void RowRender(RowRenderEventArgs<Data.FootballPlayer> args)
+    {
+        if (args.Data.IsOnMyTeam)
+        {
+            args.Attributes.Add("class", "alert alert-success");
+        }
+
+        if (!args.Data.IsAvailable && !args.Data.IsOnMyTeam)
+        {
+            args.Attributes.Add("class", "alert alert-danger");
+        }
+    }
+
+    private void OnChangePosition()
+    {
+        /*if(currentPosition == "All" || string.IsNullOrEmpty(currentPosition))
+        {
+            if(checkBox0Value == true)
+            {
+                filteredPlayers = players.Where(f => f.Rank != 0 & f.AuctionValue != 0).ToList();
+                return;
+            }
+            filteredPlayers = players;
+            return;
+        }
+
+        if(checkBox0Value == true)
+        {
+            filteredPlayers = players.Where(f => f.Position.Equals(currentPosition)).ToList();
+            filteredPlayers = filteredPlayers.Where(f => f.Rank != 0 & f.AuctionValue != 0).ToList();
+            return;
+        }
+
+        filteredPlayers = players.Where(f => f.Position.Equals(currentPosition)).ToList(); */
+    }
+
+    private async Task<bool> UpdatePlayer(Data.FootballPlayer player)
+    {
+        var client = ClientFactory.CreateClient();
+        var playerResponse = await client.PutAsJsonAsync<Data.FootballPlayer>("http://localhost:7071/api/player/", player);
+        return playerResponse.IsSuccessStatusCode;
+    }
+}

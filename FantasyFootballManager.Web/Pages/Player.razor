@@ -1,0 +1,59 @@
+@page "/player/{id:int}"
+@inject IHttpClientFactory ClientFactory;
+@using System.Text.Json;
+
+@if (getPlayerError == true)
+{
+    <p>Unable to get players from the API This is bad. 👎</p>
+}
+@if (shouldRender == false)
+{
+    <div class="row px-3">
+        <div class="col-md-4 p-3"></div>
+        <div class="col-md-4 p-3">
+            <RadzenCard>
+                <h4 class="mb-4">Getting Player @Id from the API</h4>
+                <RadzenProgressBar Value="100" ShowValue="false" Mode="ProgressBarMode.Indeterminate" />
+            </RadzenCard>
+        </div>
+        <div class="col-md-4 p-3"></div>
+    </div>
+}
+else
+{
+    <h1>Player @Id</h1>
+    <h1>@player.Name</h1>
+}
+
+
+@code {
+    [Parameter]
+    public int Id { get; set; }
+    public Data.FootballPlayer player;
+    private bool getPlayerError;
+    private bool shouldRender;
+
+    protected override bool ShouldRender() => shouldRender;
+
+    protected override async Task OnInitializedAsync()
+    {
+        // I basically took this right from: https://docs.microsoft.com/en-us/aspnet/core/blazor/call-web-api?view=aspnetcore-6.0&pivots=server
+        var request = new HttpRequestMessage(HttpMethod.Get, $"http://localhost:7071/api/player/{Id}");
+
+        var client = ClientFactory.CreateClient();
+
+        var response = await client.SendAsync(request);
+
+        if (response.IsSuccessStatusCode)
+        {
+            using var responseStream = await response.Content.ReadAsStreamAsync();
+            player = await JsonSerializer.DeserializeAsync<Data.FootballPlayer>(responseStream);
+        }
+        else
+        {
+            getPlayerError = true;
+        }
+
+        shouldRender = true;
+    }
+}
