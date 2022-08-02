@@ -26,8 +26,16 @@
 else
 {
     // This is where all the good stuff happens.
-    <div>@players.Count() players found.</div>
-    <RadzenDataGrid AllowFiltering="true" AllowColumnResize="true" FilterMode="FilterMode.Advanced" AllowPaging="false" AllowSorting="true" Data="@players" TItem="Data.FootballPlayer" ColumnWidth="300px" LogicalFilterOperator="LogicalFilterOperator.Or" RowRender="@RowRender">
+    <div class="row px-3">
+        <div class="col-md-4 p-3">
+            <RadzenCard>
+                <h4 class="mb-4">@filteredPlayers.Count() players in the list.</h4>
+                <RadzenCheckBox Name="ZeroValueCheckbox" @bind-Value=@checkBox0Value  TValue="bool" Change=@(args => OnChangePosition()) />
+                <RadzenLabel Text="🚫 Remove 0 value players." Component="ZeroValueCheckbox" Style="margin-left: 15px; vertical-align: middle;" />
+            </RadzenCard>
+        </div>
+    </div>
+    <RadzenDataGrid AllowFiltering="true" AllowColumnResize="true" FilterMode="FilterMode.Advanced" AllowPaging="false" AllowSorting="true" Data="@filteredPlayers" TItem="Data.FootballPlayer" ColumnWidth="300px" LogicalFilterOperator="LogicalFilterOperator.Or" RowRender="@RowRender">
         <Columns>
             <RadzenDataGridColumn TItem="Data.FootballPlayer" Property="Name" Filterable="false" Title="Name" Frozen="true" Width="150px" TextAlign="TextAlign.Center">
                 <Template Context="data">
@@ -68,12 +76,18 @@ else
 
 
 @code {
+    // This hold the inital list of everyone. Instead of getting a filter from the server each time,
+    // we just hold it in here.
     private IEnumerable<Data.FootballPlayer> players = new List<Data.FootballPlayer>();
+    
+    // The list uses this.
+    private IEnumerable<Data.FootballPlayer> filteredPlayers = new List<Data.FootballPlayer>();
     private List<string> positions = new List<string>();
     private string currentPosition = String.Empty;
     private bool getPlayersError;
     private bool getPositionsError;
     private bool shouldRender;
+    private bool checkBox0Value;
 
     protected override bool ShouldRender() => shouldRender;
 
@@ -91,6 +105,7 @@ else
         {
             using var responseStream = await playersResponse.Content.ReadAsStreamAsync();
             players = await JsonSerializer.DeserializeAsync<List<Data.FootballPlayer>>(responseStream);
+            filteredPlayers = players;
         }
         else
         {
@@ -154,7 +169,7 @@ else
 
     private void OnChangePosition()
     {
-        /*if(currentPosition == "All" || string.IsNullOrEmpty(currentPosition))
+        if(currentPosition == "All" || string.IsNullOrEmpty(currentPosition))
         {
             if(checkBox0Value == true)
             {
@@ -167,12 +182,12 @@ else
 
         if(checkBox0Value == true)
         {
-            filteredPlayers = players.Where(f => f.Position.Equals(currentPosition)).ToList();
+            //filteredPlayers = players.Where(f => f.Position.Equals(currentPosition)).ToList();
             filteredPlayers = filteredPlayers.Where(f => f.Rank != 0 & f.AuctionValue != 0).ToList();
             return;
         }
 
-        filteredPlayers = players.Where(f => f.Position.Equals(currentPosition)).ToList(); */
+        filteredPlayers = players.Where(f => f.Position.Equals(currentPosition)).ToList(); 
     }
 
     private async Task<bool> UpdatePlayer(Data.FootballPlayer player)
