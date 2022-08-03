@@ -1,7 +1,6 @@
 @page "/playerlist"
-@inject IHttpClientFactory ClientFactory;
+@inject Data.FootballPlayerService fps;
 @using System.Text.Json;
-@using System.Text.Json.Serialization;
 
 <h1>Player List</h1>
 
@@ -30,9 +29,14 @@ else
         <div class="col-md-4 p-3">
             <RadzenCard>
                 <h4 class="mb-4">@filteredPlayers.Count() players in the list.</h4>
-                <RadzenCheckBox Name="ZeroValueCheckbox" @bind-Value=@checkBox0Value  TValue="bool" Change=@(args => OnChangePosition()) />
-                <RadzenLabel Text="🚫 Remove 0 value players." Component="ZeroValueCheckbox" Style="margin-left: 15px; vertical-align: middle;" />
+                <div>
+                    <RadzenCheckBox Name="ZeroValueCheckbox" @bind-Value=@checkBox0Value  TValue="bool" Change=@(args => OnChangePosition()) />
+                    <RadzenLabel Text="🚫 Remove 0 value players." Component="ZeroValueCheckbox" Style="margin-left: 15px; vertical-align: middle;" />
+                </div>
+                
             </RadzenCard>
+        </div>
+        <div class="col-md-4 p-3">
         </div>
     </div>
     <RadzenDataGrid AllowFiltering="true" AllowColumnResize="true" FilterMode="FilterMode.Advanced" AllowPaging="false" AllowSorting="true" Data="@filteredPlayers" TItem="Data.FootballPlayer" ColumnWidth="300px" LogicalFilterOperator="LogicalFilterOperator.Or" RowRender="@RowRender">
@@ -93,18 +97,9 @@ else
 
     protected override async Task OnInitializedAsync()
     {
-        // I basically took this right from: https://docs.microsoft.com/en-us/aspnet/core/blazor/call-web-api?view=aspnetcore-6.0&pivots=server
-        var playersRequest = new HttpRequestMessage(HttpMethod.Get, "http://localhost:7071/api/players/");
-        var positionsRequest = new HttpRequestMessage(HttpMethod.Get, "http://localhost:7071/api/positions/");
-
-        var client = ClientFactory.CreateClient();
-
-        var playersResponse = await client.SendAsync(playersRequest);
-
-        if (playersResponse.IsSuccessStatusCode)
+        players = await fps.GetAllFootballPlayersAsync();
+        if(players.Count() > 0)
         {
-            using var responseStream = await playersResponse.Content.ReadAsStreamAsync();
-            players = await JsonSerializer.DeserializeAsync<List<Data.FootballPlayer>>(responseStream);
             filteredPlayers = players;
         }
         else
@@ -112,17 +107,8 @@ else
             getPlayersError = true;
         }
 
-        var positionsResponse = await client.SendAsync(positionsRequest);
-        if (positionsResponse.IsSuccessStatusCode)
-        {
-            using var responseStream = await positionsResponse.Content.ReadAsStreamAsync();
-            positions = await JsonSerializer.DeserializeAsync<List<string>>(responseStream);
-            if(!positions.Contains("All"))
-            {
-                positions.Add("All");
-            }
-        }
-        else
+        positions = await fps.GetAllPositionsAsync();
+        if(positions.Count() == 0)
         {
             getPositionsError = true;
         }
@@ -134,7 +120,7 @@ else
     {
         player.IsAvailable = true;
         player.IsOnMyTeam = false;
-        var status = await UpdatePlayer(player);
+        var status = await fps.UpdatePlayer(player);
         return status;
     }
 
@@ -142,7 +128,7 @@ else
     {
         player.IsAvailable = false;
         player.IsOnMyTeam = false;
-        var status = await UpdatePlayer(player);
+        var status = await fps.UpdatePlayer(player);
         return status;
     }
 
@@ -150,7 +136,7 @@ else
     {
         player.IsOnMyTeam = true;
         player.IsAvailable = false;
-        var status = await UpdatePlayer(player);
+        var status = await fps.UpdatePlayer(player);
         return status;
     }
 
@@ -188,12 +174,5 @@ else
         }
 
         filteredPlayers = players.Where(f => f.Position.Equals(currentPosition)).ToList(); 
-    }
-
-    private async Task<bool> UpdatePlayer(Data.FootballPlayer player)
-    {
-        var client = ClientFactory.CreateClient();
-        var playerResponse = await client.PutAsJsonAsync<Data.FootballPlayer>("http://localhost:7071/api/player/", player);
-        return playerResponse.IsSuccessStatusCode;
     }
 }
