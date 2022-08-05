@@ -1,9 +1,210 @@
-﻿@page "/"
+﻿@inject Data.FootballPlayerService fps;
 
-<PageTitle>Index</PageTitle>
+@page "/"
 
-<h1>Hello, world!</h1>
+<PageTitle>Fantasy Football Manager</PageTitle>
 
-Welcome to your new app.
+@if (getDataError == true)
+{
+    <p>Unable to get data from the API This is bad. 👎</p>
+}
+@if (shouldRender == false)
+{
+    <div class="row px-3">
+        <div class="col-md-4 p-3"></div>
+        <div class="col-md-4 p-3">
+            <RadzenCard>
+                <h4 class="mb-4">Getting Data from the API</h4>
+                <RadzenProgressBar Value="100" ShowValue="false" Mode="ProgressBarMode.Indeterminate" />
+            </RadzenCard>
+        </div>
+        <div class="col-md-4 p-3"></div>
+    </div>
+}
+else
+{
+    // This is where all the good stuff happens.
+    
 
-<SurveyPrompt Title="How is Blazor working for you?" />
+    <div class="container-fluid py-5 simplePlayerCard">
+        <h2 class="text-center text-uppercase">You should pick...</h2>
+        <hr />
+        <div class="row">
+            <div class="col">
+                <RadzenCard Style="height:325px;">
+                    <p class="lead">ADP</p>
+                    <h1 class="display-6 text-center"><a href="/player/@playerADP.Id">@playerADP.Name</a></h1>
+                    <h3 class="text-center">@playerADP.Position | @playerADP.Team</h3>
+                    <p class="stat">ADP: @String.Format("{0:0.00}", @playerADP.ADP) | Auction: @playerADP.AuctionValue</p>
+                    <p class="stat">Proj Pts: @playerADP.ProjectedFantasyPoints</p>
+                    <p class="stat">Rank: @playerADP.Rank</p>
+                    <h3 class="text-center">
+                        @if(!playerADP.IsOnMyTeam)
+                        {
+                            <button class="btn btn-success" @onclick="@(async e => AssignPlayerToMyTeamAsync(playerADP))">Select</button>
+                        }
+                        else
+                        {
+                            <button class="btn btn-primary" @onclick="@(async e => SetPlayerAvailableAsync(playerADP))">Reset</button>
+                        }
+                    </h3>
+                </RadzenCard>
+            </div>
+            <div class="col">
+                <RadzenCard Style="height:325px;">
+                    <p class="lead">Auction Value</p>
+                    <h1 class="display-6 text-center"><a href="/player/@playerAuction.Id">@playerAuction.Name</a></h1>
+                    <h3 class="text-center">@playerAuction.Position | @playerAuction.Team</h3>
+                    <p class="stat">ADP: @String.Format("{0:0.00}", @playerAuction.ADP) | Auction: @playerAuction.AuctionValue</p>
+                    <p class="stat">Proj Pts: @playerAuction.ProjectedFantasyPoints</p>
+                    <p class="stat">Rank: @playerAuction.Rank</p>
+                    <h3 class="text-center">
+                        @if(!playerAuction.IsOnMyTeam)
+                        {
+                            <button class="btn btn-success" @onclick="@(async e => AssignPlayerToMyTeamAsync(playerAuction))">Select</button>
+                        }
+                        else
+                        {
+                            <button class="btn btn-primary" @onclick="@(async e => SetPlayerAvailableAsync(playerAuction))">Reset</button>
+                        }
+                        
+                    </h3>
+                </RadzenCard>
+            </div>
+            <div class="col">
+                <RadzenCard Style="height:325px;">
+                    <p class="lead">Rank</p>
+                    <h1 class="display-6 text-center"><a href="/player/@playerRank.Id">@playerRank.Name</a></h1>
+                    <h3 class="text-center">@playerRank.Position | @playerRank.Team</h3>
+                    <p class="stat">ADP: @String.Format("{0:0.00}", @playerRank.ADP) | Auction: @playerRank.AuctionValue</p>
+                    <p class="stat">Proj Pts: @playerRank.ProjectedFantasyPoints</p>
+                    <p class="stat">Rank: @playerRank.Rank</p>
+                    <h3 class="text-center">
+                        @if(!playerRank.IsOnMyTeam)
+                        {
+                            <button class="btn btn-success" @onclick="@(async e => AssignPlayerToMyTeamAsync(playerRank))">Select</button>
+                        }
+                        else
+                        {
+                            <button class="btn btn-primary" @onclick="@(async e => SetPlayerAvailableAsync(playerRank))">Reset</button>
+                        }
+                    </h3>
+                </RadzenCard>
+            </div>
+        </div>
+    </div>
+/*
+        <h2 class="text-center text-uppercase">You should pick...</h2>
+        <hr />
+        <div class="row">
+            <div class="col-md-4">
+                <RadzenCard Style="height:300px;">
+                    <p>ADP</p>
+                    <h1 class="display-6 text-center"><a href="/player/@playerADP.Id">@playerADP.Name</a></h1>
+                    <h1 class="display-6 text-center">@playerADP.Position | @playerADP.Team</h1>
+                    <h3 class="text-center">ADP: @String.Format("{0:0.00}", @playerADP.ADP) | Auction: @playerADP.AuctionValue</h3>
+                    <h3 class="text-center">Proj Pts: @playerADP.ProjectedFantasyPoints</h3>
+                    <h3 class="text-center">Rank: @playerADP.Rank</h3>
+                    <h3 class="text-center">
+                        @if(!playerADP.IsOnMyTeam)
+                        {
+                            <button class="btn btn-success" @onclick="@(async e => AssignPlayerToMyTeamAsync(playerADP))">Select</button>
+                        }
+                        else
+                        {
+                            <button class="btn btn-primary" @onclick="@(async e => SetPlayerAvailableAsync(playerADP))">Reset</button>
+                        }
+                    </h3>
+                </RadzenCard>
+            </div>
+            <div class="col-md-4">
+                <RadzenCard Style="height:300px;">
+                    <p>Auction Value</p>
+                    <h2 class="display-6 text-center"><a href="/player/@playerAuction.Id">@playerAuction.Name</a></h2>
+                    <h2 class="display-6 text-center">@playerAuction.Position | @playerAuction.Team</h2>
+                    <h3 class="text-center">ADP: @String.Format("{0:0.00}", @playerAuction.ADP) | Auction: @playerAuction.AuctionValue</h3>
+                    <h3 class="text-center">Proj Pts: @playerAuction.ProjectedFantasyPoints</h3>
+                    <h3 class="text-center">Rank: @playerAuction.Rank</h3>
+                    <h3 class="text-center">
+                        @if(!playerAuction.IsOnMyTeam)
+                        {
+                            <button class="btn btn-success" @onclick="@(async e => AssignPlayerToMyTeamAsync(playerAuction))">Select</button>
+                        }
+                        else
+                        {
+                            <button class="btn btn-primary" @onclick="@(async e => SetPlayerAvailableAsync(playerAuction))">Reset</button>
+                        }
+                        
+                    </h3>
+                </RadzenCard>
+            </div>
+            <div class="col-md-4">
+                <RadzenCard Style="height:300px;">
+                    <p>Rank</p>
+                    <h2 class="display-6 text-center"><a href="/player/@playerRank.Id">@playerRank.Name</a></h2>
+                    <h2 class="display-6 text-center">@playerRank.Position | @playerRank.Team</h2>
+                    <h3 class="text-center">ADP: @String.Format("{0:0.00}", @playerRank.ADP) | Auction: @playerRank.AuctionValue</h3>
+                    <h3 class="text-center">Proj Pts: @playerRank.ProjectedFantasyPoints</h3>
+                    <h3 class="text-center">Rank: @playerRank.Rank</h3>
+                    <h3 class="text-center">
+                        @if(!playerRank.IsOnMyTeam)
+                        {
+                            <button class="btn btn-success" @onclick="@(async e => AssignPlayerToMyTeamAsync(playerRank))">Select</button>
+                        }
+                        else
+                        {
+                            <button class="btn btn-primary" @onclick="@(async e => SetPlayerAvailableAsync(playerRank))">Reset</button>
+                        }
+                    </h3>
+                </RadzenCard>
+            </div>
+        </div>
+    </div>
+*/
+}
+
+
+@code {
+
+    private IEnumerable<Data.FootballPlayer> players = new List<Data.FootballPlayer>();
+    Data.FootballPlayer playerADP = new Data.FootballPlayer();
+    Data.FootballPlayer playerAuction = new Data.FootballPlayer();
+    Data.FootballPlayer playerPts = new Data.FootballPlayer();
+    Data.FootballPlayer playerRank = new Data.FootballPlayer();
+    private bool getDataError;
+    private bool shouldRender;
+    protected override bool ShouldRender() => shouldRender;
+    protected override async Task OnInitializedAsync()
+    {
+
+        players = await fps.GetAllFootballPlayersAsync();
+        if(players.Count() == 0)
+        {
+            getDataError = true;
+        }
+        else
+        {
+            playerADP = players.OrderBy(p => p.ADP).FirstOrDefault();
+            playerAuction = players.OrderByDescending(p => p.AuctionValue).FirstOrDefault();
+            playerPts = players.OrderByDescending(p => p.ProjectedFantasyPoints).FirstOrDefault();
+            playerRank = players.Where(f => f.Rank != 0 & f.AuctionValue != 0).OrderBy(p => p.Rank).FirstOrDefault();
+            shouldRender = true;
+        }
+    }
+
+    private async Task<bool> AssignPlayerToMyTeamAsync(Data.FootballPlayer player)
+    {
+        player.IsOnMyTeam = true;
+        player.IsAvailable = false;
+        var status = await fps.UpdatePlayer(player);
+        return status;
+    }
+
+    private async Task<bool> SetPlayerAvailableAsync(Data.FootballPlayer player)
+    {
+        player.IsAvailable = true;
+        player.IsOnMyTeam = false;
+        var status = await fps.UpdatePlayer(player);
+        return status;
+    }
+}
