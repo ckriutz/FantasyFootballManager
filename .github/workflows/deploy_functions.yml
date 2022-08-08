@@ -35,7 +35,7 @@ jobs:
         pushd './'
         dotnet restore
         dotnet build --configuration Release
-        dotnet publish -c Release -o '/output'
+        dotnet publish -c Release -o ./output
         popd
 
     - name: 'Run Azure Functions Action'
