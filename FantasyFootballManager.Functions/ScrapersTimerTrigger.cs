@@ -15,6 +15,7 @@ namespace FantasyFootballManager.Functions
         private readonly string _connectionString;
         private static readonly string _footballCalculatorQueueName = "footballcalculator";
         private static readonly string _sportsDataIoQueueName = "sportsdataio";
+        private static readonly string _fantasyProsQueueName = "fantasypros";
         private static readonly HttpClient _client = new HttpClient();
 
         public ScrapersTimerTrigger()
@@ -31,15 +32,16 @@ namespace FantasyFootballManager.Functions
             log.LogInformation($"C# Timer trigger function executed at: {DateTime.Now}");
             await RunSportsDataIoScraper(log);
             await RunFantasyFootballCalculatorScraper(log);
+            await RunFantasyProsScraper(log);
         }
 
-        public async Task RunSportsDataIoScraper(ILogger log)
+        private async Task RunSportsDataIoScraper(ILogger log)
         {
-            Console.WriteLine("Lets do an initial load of SportsData.IO data!");
+            Console.WriteLine("Time to hit the SportsData.IO API for data!");
             var _queueClient = new QueueClient(_connectionString, _sportsDataIoQueueName);
             var OcpApimSubscriptionKey = System.Environment.GetEnvironmentVariable("OcpApimSubscriptionKey");
             System.Text.Json.JsonSerializerOptions options = new System.Text.Json.JsonSerializerOptions();
-            options.IgnoreNullValues = true;
+            options.DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull;
 
             _client.DefaultRequestHeaders.Add("Ocp-Apim-Subscription-Key", OcpApimSubscriptionKey);
 
@@ -47,6 +49,8 @@ namespace FantasyFootballManager.Functions
 
             List<Models.SportsDataIo.SportsDataIOObject> playerData = JsonSerializer.Deserialize<List<Models.SportsDataIo.SportsDataIOObject>>(response);
             
+            log.LogInformation($"SportsData.io API returned {playerData.Count} players.");
+
             // This is to fix some null things.
             foreach (Models.SportsDataIo.SportsDataIOObject p in playerData)
             {
@@ -60,14 +64,11 @@ namespace FantasyFootballManager.Functions
                 }
             }
 
-            foreach (var p in playerData)
-            {
-                _queueClient.SendMessage(Base64Encode(JsonSerializer.Serialize(p)));
-                //Console.WriteLine(p.Name);
-            }
+            // Now lets chuck it into a Storage Queue.
+            playerData.ForEach(p => _queueClient.SendMessage(Base64Encode(JsonSerializer.Serialize(p))));
         }
 
-        public async Task RunFantasyFootballCalculatorScraper(ILogger log)
+        private async Task RunFantasyFootballCalculatorScraper(ILogger log)
         {
             log.LogInformation("Time to hit the Fantasy Football Calculator API!");
             var _queueClient = new QueueClient(_connectionString, _footballCalculatorQueueName);
@@ -79,10 +80,21 @@ namespace FantasyFootballManager.Functions
             
             // Now lets chuck it into a Storage Queue.
             responseRoot.players.ForEach(p => _queueClient.SendMessage(Base64Encode(JsonSerializer.Serialize(p))));
-            //responseRoot.players.ForEach(p => Console.WriteLine(p.player_id + " " + p.name));
         }
 
-        
+        private async Task RunFantasyProsScraper(ILogger log)
+        {
+            log.LogInformation("Time to scrape FantasyPros for Data.");
+            var _queueClient = new QueueClient(_connectionString, _fantasyProsQueueName);
+            string responseBody = await _client.GetStringAsync("https://partners.fantasypros.com/api/v1/consensus-rankings.php?sport=NFL&year=2021&week=0&id=1054&position=ALL&type=ST&scoring=HALF&filters=7:9:285:699:747&export=json");
+
+            Models.FantasyPros.Root players = JsonSerializer.Deserialize<Models.FantasyPros.Root>(responseBody);
+
+            log.LogInformation($"Fantasy Pros API returned {players.players.Count} players.");
+            
+            // Now lets chuck it into a Storage Queue.
+            players.players.ForEach(p => _queueClient.SendMessage(Base64Encode(JsonSerializer.Serialize(p))));
+        }
 
         private static string Base64Encode(string plainText)
         {
