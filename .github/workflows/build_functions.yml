@@ -9,7 +9,7 @@ jobs:
     runs-on: ubuntu-22.04
     defaults:
         run:
-          working-directory: FantasyFootballManager.Web
+          working-directory: FantasyFootballManager.Functions
 
     steps:
     - name: Checkout
