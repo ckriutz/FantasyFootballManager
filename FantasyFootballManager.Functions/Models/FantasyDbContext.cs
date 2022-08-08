@@ -7,9 +7,14 @@ namespace FantasyFootballManager.Functions.Models
         public DbSet<FootballPlayer> FootballPlayers { get; set; }
         public DbSet<ImportStatus> ImportStatuses { get; set; }
 
-        public FantasyContext(DbContextOptions<FantasyContext> dbContextOptions) : base(dbContextOptions)
-        {
+        public FantasyContext() { }
+        
+        public FantasyContext(DbContextOptions<FantasyContext> dbContextOptions) : base(dbContextOptions) { }
 
+        protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+        {
+            var connectionString = System.Environment.GetEnvironmentVariable("SqlConnectionString");
+            optionsBuilder.UseSqlServer(connectionString);
         }
     }
 }

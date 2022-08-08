@@ -40,11 +40,11 @@ namespace FantasyFootballManager.Functions
         [FunctionName("GetPlayers")]
         public async Task<IActionResult> GetPlayers([HttpTrigger(AuthorizationLevel.Function, "get", Route = "players/")] HttpRequest req, ILogger log)
         {
-            // In Theroy, we are using this route to get ALL the players.
+            // We are going to get all the players, but only the ones updated this year.
             // This was surprisingly easy.
             log.LogInformation("C# HTTP trigger function processed a request to get all the players.");
 
-            var players = await _context.FootballPlayers.AsQueryable().ToListAsync();
+            var players = await _context.FootballPlayers.AsQueryable().Where(p => p.LastUpdatedSportsDataIO.Year == DateTime.Now.Year).ToListAsync();
 
             return new OkObjectResult(players);
         }

@@ -1,5 +1,6 @@
 @page "/player/{id:int}"
 @inject IHttpClientFactory ClientFactory;
+@inject Data.FootballPlayerService fps;
 @using System.Text.Json;
 
 @if (getPlayerError == true)
@@ -21,8 +22,54 @@
 }
 else
 {
-    <h1>Player @Id</h1>
-    <h1>@player.Name</h1>
+    <div class="container">
+        <div class="row user-menu-container">
+            <div class="col-md-3">
+                <img src="@player.PlayerHeadshotURL" class="img-thumbnail">
+                <h3 style="padding-top:10px;">
+                    @if (!player.IsAvailable && !player.IsOnMyTeam)
+                    {
+                        <button class="btn btn-primary" @onclick="@(async e => SetPlayerAvailableAsync(player))">Return</button>
+                    }
+
+                    @if(player.IsOnMyTeam)
+                    {
+                        <button class="btn btn-primary" @onclick="@(async e => SetPlayerAvailableAsync(player))">Reset</button>
+                    }
+                    @if(player.IsAvailable)
+                    {
+                        <button class="btn btn-warning" @onclick="@(async e => SetPlayerUnavailableAsync(player))">Taken</button>
+                        <button class="btn btn-success" @onclick="@(async e => AssignPlayerToMyTeamAsync(player))">Add</button>
+                    }
+                </h3>       
+            </div>
+            <div class="col-md-9">
+                <h1 class="display-4"><RadzenBadge BadgeStyle="BadgeStyle.Info" Text="@player.Tier.ToString()" /> @player.Name | @player.Position | @player.Team</h1>
+                <h3><RadzenBadge BadgeStyle="BadgeStyle.Light" Text="@player.Bye.ToString()" /></h3>
+                <div class="row">
+                    <div class="col-md-4">
+                        <RadzenCard Style="height:150px;">
+                            <p class="lead">Projected Points</p>
+                            <h1 class="display-4 text-center">@player.ProjectedFantasyPoints</h1>
+                        </RadzenCard>
+                    </div>
+                    <div class="col-md-4">
+                        <RadzenCard Style="height:150px;">
+                            <p class="lead">ADP</p>
+                            <h1 class="display-4 text-center">@String.Format("{0:0.00}",player.ADP)</h1>
+                        </RadzenCard>
+                    </div>
+                    <div class="col-md-4">
+                        <RadzenCard Style="height:150px;">
+                            <p class="lead">Auction Value</p>
+                            <h1 class="display-4 text-center">@player.AuctionValue</h1>
+                        </RadzenCard>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
 }
 
 
@@ -55,5 +102,29 @@ else
         }
 
         shouldRender = true;
+    }
+
+    private async Task<bool> SetPlayerAvailableAsync(Data.FootballPlayer player)
+    {
+        player.IsAvailable = true;
+        player.IsOnMyTeam = false;
+        var status = await fps.UpdatePlayer(player);
+        return status;
+    }
+
+    private async Task<bool> SetPlayerUnavailableAsync(Data.FootballPlayer player)
+    {
+        player.IsAvailable = false;
+        player.IsOnMyTeam = false;
+        var status = await fps.UpdatePlayer(player);
+        return status;
+    }
+
+    private async Task<bool> AssignPlayerToMyTeamAsync(Data.FootballPlayer player)
+    {
+        player.IsOnMyTeam = true;
+        player.IsAvailable = false;
+        var status = await fps.UpdatePlayer(player);
+        return status;
     }
 }

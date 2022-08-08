@@ -27,7 +27,7 @@ namespace FantasyFootballManager.Functions
         // Every 5 Minutes: 0 */5 * * * *
         // Every 12 Hours: 0 0 */12 * * *
         [FunctionName("ScrapersTimerTrigger")]
-        public async Task Run([TimerTrigger("0 */5 * * * *")]TimerInfo myTimer, ILogger log)
+        public async Task Run([TimerTrigger("0 0 */12 * * *")]TimerInfo myTimer, ILogger log)
         {
             log.LogInformation($"C# Timer trigger function executed at: {DateTime.Now}");
             await RunSportsDataIoScraper(log);
@@ -72,7 +72,7 @@ namespace FantasyFootballManager.Functions
         {
             log.LogInformation("Time to hit the Fantasy Football Calculator API!");
             var _queueClient = new QueueClient(_connectionString, _footballCalculatorQueueName);
-            var response = await _client.GetStringAsync("https://fantasyfootballcalculator.com/api/v1/adp/standard?teams=12&year=2021&position=all");
+            var response = await _client.GetStringAsync("https://fantasyfootballcalculator.com/api/v1/adp/standard?teams=12&year=2022&position=all");
 
             Models.FantasyFootballCalculator.Root responseRoot = JsonSerializer.Deserialize<Models.FantasyFootballCalculator.Root>(response);
 
@@ -86,7 +86,7 @@ namespace FantasyFootballManager.Functions
         {
             log.LogInformation("Time to scrape FantasyPros for Data.");
             var _queueClient = new QueueClient(_connectionString, _fantasyProsQueueName);
-            string responseBody = await _client.GetStringAsync("https://partners.fantasypros.com/api/v1/consensus-rankings.php?sport=NFL&year=2021&week=0&id=1054&position=ALL&type=ST&scoring=HALF&filters=7:9:285:699:747&export=json");
+            string responseBody = await _client.GetStringAsync("https://partners.fantasypros.com/api/v1/consensus-rankings.php?sport=NFL&year=2022&week=0&id=1054&position=ALL&type=ST&scoring=STD&filters=7:9:285:699:747&export=json");
 
             Models.FantasyPros.Root players = JsonSerializer.Deserialize<Models.FantasyPros.Root>(responseBody);
 

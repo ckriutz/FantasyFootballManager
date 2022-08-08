@@ -44,11 +44,7 @@ public class FootballPlayer
     // From SportsData.IO
     [JsonPropertyName("bye")]
     public int Bye { get; set; }
-    
-    // From Lineups
-    [JsonPropertyName("depth")]
-    public int Depth { get; set; }
-    
+      
     // From FFantasyPros
     [JsonPropertyName("playerHeadshotURL")]
     public string PlayerHeadshotURL { get; set; }
@@ -64,10 +60,6 @@ public class FootballPlayer
     // From FantasyPros
     [JsonPropertyName("fantasyProsRank")]
     public int FantasyProsRank { get; set; }
-    
-    // From Lineups
-    [JsonPropertyName("lineupsRank")]
-    public int LineupsRank { get; set; }
 
     [JsonIgnore]
     public double Rank
@@ -84,10 +76,6 @@ public class FootballPlayer
     [JsonPropertyName("averageDraftPositionFCalculator")]
     public double AverageDraftPositionFCalculator { get; set; }
 
-    // From Lineups
-    [JsonPropertyName("averageDraftPositionLineups")]
-    public double AverageDraftPositionLineups { get; set; }
-
     [JsonIgnore]
     public double ADP
     {
@@ -103,17 +91,9 @@ public class FootballPlayer
     [JsonPropertyName("projectedFantasyPoints")]
     public double ProjectedFantasyPoints { get; set; }
 
-    // From Lineups
-    [JsonPropertyName("projectedFantasyPointsLineups")]
-    public double ProjectedFantasyPointsLineups { get; set; }   
-
     // From SportsData.IO
     [JsonPropertyName("auctionValue")]
     public int AuctionValue { get; set; }
-    
-    // From Lineups
-    [JsonPropertyName("lineupsAuctionValue")]
-    public double LineupsAuctionValue { get; set; }
 
     // From FantasyPros
     [JsonPropertyName("tier")]
