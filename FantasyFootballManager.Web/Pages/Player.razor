@@ -84,19 +84,9 @@ else
 
     protected override async Task OnInitializedAsync()
     {
-        // I basically took this right from: https://docs.microsoft.com/en-us/aspnet/core/blazor/call-web-api?view=aspnetcore-6.0&pivots=server
-        var request = new HttpRequestMessage(HttpMethod.Get, $"http://localhost:7071/api/player/{Id}");
+        player = await fps.GetFootballPlayerAsync(Id);
 
-        var client = ClientFactory.CreateClient();
-
-        var response = await client.SendAsync(request);
-
-        if (response.IsSuccessStatusCode)
-        {
-            using var responseStream = await response.Content.ReadAsStreamAsync();
-            player = await JsonSerializer.DeserializeAsync<Data.FootballPlayer>(responseStream);
-        }
-        else
+        if (string.IsNullOrEmpty(player.Name))
         {
             getPlayerError = true;
         }

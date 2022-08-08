@@ -6,16 +6,18 @@ public class FootballPlayerService
 {
     // I basically took this right from: https://docs.microsoft.com/en-us/aspnet/core/blazor/call-web-api?view=aspnetcore-6.0&pivots=server
     HttpClient _client;
+    string _baseUrl;
 
     public FootballPlayerService(IHttpClientFactory clientFactory)
     {
         _client = clientFactory.CreateClient();
+        _baseUrl = System.Environment.GetEnvironmentVariable("apiurl");
     }
 
     public async Task<List<FootballPlayer>> GetAllFootballPlayersAsync()
     {
         var players = new List<FootballPlayer>();
-        var request = new HttpRequestMessage(HttpMethod.Get, "http://localhost:7071/api/players/");
+        var request = new HttpRequestMessage(HttpMethod.Get, $"{_baseUrl}/api/players/");
         var response = await _client.SendAsync(request);
 
         if (response.IsSuccessStatusCode)
@@ -30,7 +32,7 @@ public class FootballPlayerService
     public async Task<List<string>> GetAllPositionsAsync()
     {
         List<string> positions = new List<string>();
-        var request = new HttpRequestMessage(HttpMethod.Get, "http://localhost:7071/api/positions/");
+        var request = new HttpRequestMessage(HttpMethod.Get, $"{_baseUrl}/api/positions/");
 
         var response = await _client.SendAsync(request);
         if (response.IsSuccessStatusCode)
@@ -46,9 +48,24 @@ public class FootballPlayerService
         return positions;
     }
 
+    public async Task<Data.FootballPlayer> GetFootballPlayerAsync(int id)
+    {
+        var player = new Data.FootballPlayer();
+        var request = new HttpRequestMessage(HttpMethod.Get, $"{_baseUrl}/api/player/{id}");
+
+        var response = await _client.SendAsync(request);
+        if (response.IsSuccessStatusCode)
+        {
+            using var responseStream = await response.Content.ReadAsStreamAsync();
+            player = await JsonSerializer.DeserializeAsync<Data.FootballPlayer>(responseStream);
+        }
+
+        return player;
+    }
+
     public async Task<bool> UpdatePlayer(Data.FootballPlayer player)
     {
-        var playerResponse = await _client.PutAsJsonAsync<Data.FootballPlayer>("http://localhost:7071/api/player/", player);
+        var playerResponse = await _client.PutAsJsonAsync<Data.FootballPlayer>($"{_baseUrl}/api/player/", player);
         return playerResponse.IsSuccessStatusCode;
     }
 
