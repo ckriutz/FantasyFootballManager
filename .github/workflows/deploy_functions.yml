@@ -32,9 +32,11 @@ jobs:
     - name: 'Restore, Build, and Publish'
       shell: bash
       run: |
+        pushd './'
         dotnet restore
         dotnet build --configuration Release
         dotnet publish -c Release -o '/output'
+        popd
 
     - name: 'Run Azure Functions Action'
       uses: Azure/functions-action@v1
