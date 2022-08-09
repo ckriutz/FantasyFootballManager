@@ -25,7 +25,7 @@ namespace FantasyFootballManager.Functions
         }
 
         [FunctionName("FootballHealthHttpTrigger")]
-        public async Task<IActionResult> CheckHealth([HttpTrigger(AuthorizationLevel.Function, "get", Route = "health/")] HttpRequest req, ILogger log)
+        public async Task<IActionResult> CheckHealth([HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "health/")] HttpRequest req, ILogger log)
         {
             log.LogInformation("C# HTTP trigger function processed a request for a health check.");
             log.LogInformation($"Using connection string: {_context.Database.GetConnectionString()}");
