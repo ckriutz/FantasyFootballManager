@@ -28,13 +28,24 @@ namespace FantasyFootballManager.Functions
         public async Task<IActionResult> CheckHealth([HttpTrigger(AuthorizationLevel.Function, "get", Route = "health/")] HttpRequest req, ILogger log)
         {
             log.LogInformation("C# HTTP trigger function processed a request for a health check.");
-            var CanConnect = await _context.Database.CanConnectAsync();
-            if (CanConnect == true)
-            {
-                return new OkObjectResult(true);
-            }
+            log.LogInformation($"Using connection string: {_context.Database.GetConnectionString()}");
 
-            return new BadRequestObjectResult(false);
+            try
+            {
+                bool canConnect = await _context.Database.CanConnectAsync();
+                if (canConnect == true)
+                {
+                    return new OkObjectResult(true);
+                }
+                else
+                {
+                    return new OkObjectResult(false);
+                }
+            }
+            catch (Exception ex)
+            {
+                return new OkObjectResult(ex.ToString());
+            }       
         }
 
         [FunctionName("GetPlayers")]
