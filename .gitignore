@@ -4,6 +4,9 @@
 # Azure Functions localsettings file
 local.settings.json
 
+# Docker things
+FantasyFootballManager.Web/docker-compose.debug.yml
+
 # User-specific files
 *.suo
 *.user

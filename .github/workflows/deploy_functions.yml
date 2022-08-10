@@ -1,3 +1,6 @@
+# This will build, and deploy the functions everytime the project is updated.
+# Keep this in mind. Might want to target a specific branch, or situation in the future.
+
 name: Deploy Functions
 
 on:
