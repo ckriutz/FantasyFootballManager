@@ -48,7 +48,7 @@ jobs:
         registry-login-server: ${{ secrets.REGISTRY_LOGIN_SERVER }}
         registry-username: ${{ secrets.REGISTRY_USERNAME }}
         registry-password: ${{ secrets.REGISTRY_PASSWORD }}
-        secure-environment-variables: apiUrl=${{ secrets.API_URL }} code=${{ secrets.CODE }}
+        secure-environment-variables: apiurl=${{ secrets.API_URL }} code=${{ secrets.CODE }}
         name: fantasyfootballmanager-web
         location: 'east us'
         ports: '5221'
