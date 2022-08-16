@@ -32,7 +32,7 @@ namespace FantasyFootballManager.Functions
                 Position = sportsDataIoPlayer.Position,
                 Team = sportsDataIoPlayer.Team,
                 Bye = sportsDataIoPlayer.ByeWeek.HasValue ? sportsDataIoPlayer.ByeWeek.Value : 0,
-                AverageDraftPositionSportsData = sportsDataIoPlayer.AverageDraftPosition,
+                AverageDraftPositionSportsData = sportsDataIoPlayer.AverageDraftPositionPPR,
                 LastSeasonFantasyPoints = sportsDataIoPlayer.LastSeasonFantasyPoints,
                 ProjectedFantasyPoints = sportsDataIoPlayer.ProjectedFantasyPoints,
                 AuctionValue = sportsDataIoPlayer.AuctionValue,

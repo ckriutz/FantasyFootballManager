@@ -51,3 +51,4 @@ jobs:
         secure-environment-variables: apiUrl=${{ secrets.API_URL }} code=${{ secrets.CODE }}
         name: fantasyfootballmanager-web
         location: 'east us'
+        ports: '5221'

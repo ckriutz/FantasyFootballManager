@@ -33,8 +33,8 @@ else
             <div class="col">
                 <RadzenCard Style="height:325px;">
                     <p class="lead">ADP</p>
-                    <h1 class="display-6 text-center"><a href="/player/@playerADP.Id">@playerADP.Name</a></h1>
-                    <h3 class="text-center">@playerADP.Position | @playerADP.Team</h3>
+                    <h3 class="text-center"><a href="/player/@playerADP.Id">@playerADP.Name</a></h3>
+                    <h4 class="text-center">@playerADP.Position | @playerADP.Team</h4>
                     <p class="stat">ADP: @String.Format("{0:0.00}", @playerADP.ADP) | Auction: @playerADP.AuctionValue</p>
                     <p class="stat">Proj Pts: @playerADP.ProjectedFantasyPoints</p>
                     <p class="stat">Rank: @playerADP.Rank</p>
@@ -53,8 +53,8 @@ else
             <div class="col">
                 <RadzenCard Style="height:325px;">
                     <p class="lead">Auction Value</p>
-                    <h1 class="display-6 text-center"><a href="/player/@playerAuction.Id">@playerAuction.Name</a></h1>
-                    <h3 class="text-center">@playerAuction.Position | @playerAuction.Team</h3>
+                    <h3 class="text-center"><a href="/player/@playerAuction.Id">@playerAuction.Name</a></h3>
+                    <h4 class="text-center">@playerAuction.Position | @playerAuction.Team</h4>
                     <p class="stat">ADP: @String.Format("{0:0.00}", @playerAuction.ADP) | Auction: @playerAuction.AuctionValue</p>
                     <p class="stat">Proj Pts: @playerAuction.ProjectedFantasyPoints</p>
                     <p class="stat">Rank: @playerAuction.Rank</p>
@@ -74,8 +74,8 @@ else
             <div class="col">
                 <RadzenCard Style="height:325px;">
                     <p class="lead">Rank</p>
-                    <h1 class="display-6 text-center"><a href="/player/@playerRank.Id">@playerRank.Name</a></h1>
-                    <h3 class="text-center">@playerRank.Position | @playerRank.Team</h3>
+                    <h3 class="text-center"><a href="/player/@playerRank.Id">@playerRank.Name</a></h3>
+                    <h4 class="text-center">@playerRank.Position | @playerRank.Team</h4>
                     <p class="stat">ADP: @String.Format("{0:0.00}", @playerRank.ADP) | Auction: @playerRank.AuctionValue</p>
                     <p class="stat">Proj Pts: @playerRank.ProjectedFantasyPoints</p>
                     <p class="stat">Rank: @playerRank.Rank</p>
@@ -92,6 +92,21 @@ else
                 </RadzenCard>
             </div>
         </div>
+
+        <div class="row">
+            <RadzenDataList WrapItems="true" Data="@engineResults" TItem="RulesEngine.Models.RuleResultTree" PagerHorizontalAlign="HorizontalAlign.Left" ShowPagingSummary="false">
+                <Template Context="result">
+                    <div class="container">
+                        <div class="row">
+                            @if(result.IsSuccess == false)
+                            {
+                                <p>⚠️ @result.ExceptionMessage</p>
+                            }
+                        </div>
+                    </div>
+                </Template>
+            </RadzenDataList>
+        </div>
     </div>
 }
 
@@ -103,6 +118,7 @@ else
     Data.FootballPlayer playerAuction = new Data.FootballPlayer();
     Data.FootballPlayer playerPts = new Data.FootballPlayer();
     Data.FootballPlayer playerRank = new Data.FootballPlayer();
+    List<RulesEngine.Models.RuleResultTree> engineResults = new List<RulesEngine.Models.RuleResultTree>(); 
     private bool getDataError;
     private bool shouldRender;
     protected override bool ShouldRender() => shouldRender;
@@ -120,7 +136,11 @@ else
             playerAuction = players.OrderByDescending(p => p.AuctionValue).FirstOrDefault();
             playerPts = players.OrderByDescending(p => p.ProjectedFantasyPoints).FirstOrDefault();
             playerRank = players.Where(f => f.Rank != 0 & f.AuctionValue != 0).OrderBy(p => p.Rank).FirstOrDefault();
+            
+            engineResults = await Data.FantasyEngine.RunEngine(players.ToList());
+            
             shouldRender = true;
+
         }
     }
 
