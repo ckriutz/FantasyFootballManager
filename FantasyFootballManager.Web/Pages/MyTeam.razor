@@ -28,7 +28,7 @@ else
         <div class="col-md-3">
             <RadzenCard Style="height:150px;">
                 <p class="lead">Total Starters Projected Points</p>
-                <h1 class="display-4 text-center">@myStarters.Sum(p => p.ProjectedFantasyPoints)</h1>
+                <h1 class="display-4 text-center">@Math.Round(myStarters.Sum(p => p.ProjectedFantasyPoints), 2)</h1>
             </RadzenCard>
         </div>
         <div class="col-md-3">

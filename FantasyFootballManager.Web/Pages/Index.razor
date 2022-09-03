@@ -94,15 +94,11 @@ else
         </div>
 
         <div class="row">
-            <RadzenDataList WrapItems="true" Data="@engineResults" TItem="RulesEngine.Models.RuleResultTree" PagerHorizontalAlign="HorizontalAlign.Left" ShowPagingSummary="false">
+            <RadzenDataList WrapItems="true" Data="@engineResults" TItem="Data.RuleResult" PagerHorizontalAlign="HorizontalAlign.Left" ShowPagingSummary="false">
                 <Template Context="result">
-                    <div class="container">
-                        <div class="row">
-                            @if(result.IsSuccess == false)
-                            {
-                                <p>⚠️ @result.ExceptionMessage</p>
-                            }
-                        </div>
+                    
+                    <div class="row">
+                        <p>⚠️ @result.Message</p>
                     </div>
                 </Template>
             </RadzenDataList>
@@ -118,7 +114,7 @@ else
     Data.FootballPlayer playerAuction = new Data.FootballPlayer();
     Data.FootballPlayer playerPts = new Data.FootballPlayer();
     Data.FootballPlayer playerRank = new Data.FootballPlayer();
-    List<RulesEngine.Models.RuleResultTree> engineResults = new List<RulesEngine.Models.RuleResultTree>(); 
+    List<Data.RuleResult> engineResults = new List<Data.RuleResult>(); 
     private bool getDataError;
     private bool shouldRender;
     protected override bool ShouldRender() => shouldRender;
