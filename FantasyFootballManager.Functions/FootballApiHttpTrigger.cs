@@ -121,5 +121,17 @@ namespace FantasyFootballManager.Functions
 
             return new OkObjectResult(positions);
         }
+
+        [FunctionName("GetStatuses")]
+        public async Task<IActionResult> GetImportStatuses([HttpTrigger(AuthorizationLevel.Function, "get", Route = "importstatuses/")] HttpRequest req, ILogger log)
+        {
+            // In Theroy, we are using this route to get ALL the players.
+            // This was surprisingly easy.
+            log.LogInformation("C# HTTP trigger function processed a request to get all the statuses.");
+            
+            var statuses = await _context.ImportStatuses.ToListAsync();
+
+            return new OkObjectResult(statuses);
+        }
     }
 }

@@ -9,8 +9,8 @@ namespace FantasyFootballManager.Functions
     {
         public override void Configure(IFunctionsHostBuilder builder)
         {
-            var connectionString = System.Environment.GetEnvironmentVariable("SqlConnectionString");
-            builder.Services.AddDbContext<FantasyFootballManager.Functions.Models.FantasyContext>(x => x.UseSqlServer(connectionString));
+            var postgresConnectionString = System.Environment.GetEnvironmentVariable("PostgresConnectionString");
+            builder.Services.AddDbContext<FantasyFootballManager.Functions.Models.FantasyContext>(x => x.UseNpgsql(postgresConnectionString));
         }
     }
 }

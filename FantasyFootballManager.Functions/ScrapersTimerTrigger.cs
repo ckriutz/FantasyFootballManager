@@ -16,6 +16,7 @@ namespace FantasyFootballManager.Functions
         private static readonly string _footballCalculatorQueueName = "footballcalculator";
         private static readonly string _sportsDataIoQueueName = "sportsdataio";
         private static readonly string _fantasyProsQueueName = "fantasypros";
+        private static readonly string _importStatusQueueName = "status";
         private static readonly HttpClient _client = new HttpClient();
 
         public ScrapersTimerTrigger()
@@ -27,11 +28,11 @@ namespace FantasyFootballManager.Functions
         // Every 5 Minutes: 0 */5 * * * *
         // Every 12 Hours: 0 0 */12 * * *
         [FunctionName("ScrapersTimerTrigger")]
-        public async Task Run([TimerTrigger("0 0 */12 * * *")]TimerInfo myTimer, ILogger log)
+        public async Task Run([TimerTrigger("0 */5 * * * *")]TimerInfo myTimer, ILogger log)
         {
             log.LogInformation($"C# Timer trigger function executed at: {DateTime.Now}");
-            await RunSportsDataIoScraper(log);
-            await RunFantasyFootballCalculatorScraper(log);
+            //await RunSportsDataIoScraper(log);
+            //await RunFantasyFootballCalculatorScraper(log);
             await RunFantasyProsScraper(log);
         }
 
@@ -66,6 +67,10 @@ namespace FantasyFootballManager.Functions
 
             // Now lets chuck it into a Storage Queue.
             playerData.ForEach(p => _queueClient.SendMessage(Base64Encode(JsonSerializer.Serialize(p))));
+
+            // Now that we're all done, lets add a message to the queue for the last time this was updated.
+            var iStatus = new Models.ImportStatus { Service = "SportsDataIO", LastUpdated = DateTime.UtcNow };
+            await UpdateImportStatus(iStatus, log);
         }
 
         private async Task RunFantasyFootballCalculatorScraper(ILogger log)
@@ -80,6 +85,10 @@ namespace FantasyFootballManager.Functions
             
             // Now lets chuck it into a Storage Queue.
             responseRoot.players.ForEach(p => _queueClient.SendMessage(Base64Encode(JsonSerializer.Serialize(p))));
+
+            // Now that we're all done, lets add a message to the queue for the last time this was updated.
+            var iStatus = new Models.ImportStatus { Service = "FFootballCalculator", LastUpdated = DateTime.UtcNow };
+            await UpdateImportStatus(iStatus, log);
         }
 
         private async Task RunFantasyProsScraper(ILogger log)
@@ -94,12 +103,23 @@ namespace FantasyFootballManager.Functions
             
             // Now lets chuck it into a Storage Queue.
             players.players.ForEach(p => _queueClient.SendMessage(Base64Encode(JsonSerializer.Serialize(p))));
+
+            // Now that we're all done, lets add a message to the queue for the last time this was updated.
+            var iStatus = new Models.ImportStatus { Service = "FantasyPros", LastUpdated = DateTime.UtcNow };
+            await UpdateImportStatus(iStatus, log);
         }
 
         private static string Base64Encode(string plainText)
         {
             var plainTextBytes = System.Text.Encoding.UTF8.GetBytes(plainText);
             return System.Convert.ToBase64String(plainTextBytes);
+        }
+
+        private async Task UpdateImportStatus(Models.ImportStatus importStatus, ILogger log)
+        {
+            log.LogInformation($"Adding import status for {importStatus.Service}");
+            var _queueClient = new QueueClient(_connectionString, _importStatusQueueName);
+            await _queueClient.SendMessageAsync(Base64Encode(JsonSerializer.Serialize(importStatus)));
         }
     }
 }

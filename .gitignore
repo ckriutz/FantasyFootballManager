@@ -4,8 +4,15 @@
 # Azure Functions localsettings file
 local.settings.json
 
+# Azure Functions other folders?
+FantasyFootballManager.Functions/__blobstorage__
+FantasyFootballManager.Functions/__queuestorage__
+
 # Docker things
 FantasyFootballManager.Web/docker-compose.debug.yml
+
+# Local Things
+/Data
 
 # User-specific files
 *.suo

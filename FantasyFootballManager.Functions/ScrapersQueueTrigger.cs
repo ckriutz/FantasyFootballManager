@@ -36,7 +36,7 @@ namespace FantasyFootballManager.Functions
                 LastSeasonFantasyPoints = sportsDataIoPlayer.LastSeasonFantasyPoints,
                 ProjectedFantasyPoints = sportsDataIoPlayer.ProjectedFantasyPoints,
                 AuctionValue = sportsDataIoPlayer.AuctionValue,
-                LastUpdatedSportsDataIO = DateTime.Now,
+                LastUpdatedSportsDataIO = DateTime.UtcNow,
                 IsAvailable = true
             };
 
@@ -80,7 +80,7 @@ namespace FantasyFootballManager.Functions
                 PlayerHeadshotURL = FProsPlayer.player_square_image_url,
                 FantasyProsRank = FProsPlayer.rank_ecr,
                 Tier = FProsPlayer.tier,
-                LastUpdatedFantasyPros = DateTime.Now
+                LastUpdatedFantasyPros = DateTime.UtcNow
             };
 
             // Thrid Step, lets write/update this to the database.
@@ -139,7 +139,7 @@ namespace FantasyFootballManager.Functions
                 FootballCalculatorId = FCalcPlayer.player_id,
                 FFCRank = ((FCalcPlayer.high+FCalcPlayer.low)/2),
                 AverageDraftPositionFCalculator = FCalcPlayer.adp,
-                LastUpdatedFFootballCalculator = DateTime.Now
+                LastUpdatedFFootballCalculator = DateTime.UtcNow
             };
 
             // Thrid Step, lets write/update this to the database.
@@ -175,6 +175,28 @@ namespace FantasyFootballManager.Functions
                 existingPlayerById.AverageDraftPositionFCalculator = player.AverageDraftPositionFCalculator;
                 existingPlayerById.LastUpdatedFFootballCalculator = player.LastUpdatedFFootballCalculator;
                 _context.Update(existingPlayerById);
+                _context.SaveChanges();
+            }
+        }
+    
+        [FunctionName("StatusQueueTrigger")]
+        public void ImportStatusesTrigger([QueueTrigger("status", Connection = "QueueStorageConnectionString")]string myQueueItem, ILogger log)
+        {
+            log.LogInformation($"Status Queue trigger function processed: {myQueueItem}");
+
+            var importStatus = JsonSerializer.Deserialize<Models.ImportStatus>(myQueueItem);
+            // First, lets see if we have one. We really should.
+            var existingStatus = _context.ImportStatuses.FirstOrDefault(i => i.Service ==  importStatus.Service);
+            if(existingStatus == null)
+            {
+                _context.ImportStatuses.Add(importStatus);
+                _context.SaveChanges();
+            }
+            else
+            {
+                // We are in here! Lets update.
+                existingStatus.LastUpdated = importStatus.LastUpdated;
+                _context.Update(existingStatus);
                 _context.SaveChanges();
             }
         }

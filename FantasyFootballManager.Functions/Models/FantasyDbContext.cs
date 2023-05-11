@@ -13,8 +13,8 @@ namespace FantasyFootballManager.Functions.Models
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
-            var connectionString = System.Environment.GetEnvironmentVariable("SqlConnectionString");
-            optionsBuilder.UseSqlServer(connectionString);
+            var postgresConnectionString = System.Environment.GetEnvironmentVariable("PostgresConnectionString");
+            optionsBuilder.UseNpgsql(postgresConnectionString);
         }
     }
 }
