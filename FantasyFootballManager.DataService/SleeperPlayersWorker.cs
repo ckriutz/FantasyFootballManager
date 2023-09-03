@@ -10,14 +10,6 @@ using NRedisStack.Search;
 using NRedisStack.Search.Literals.Enums;
 using System.Text.Json;
 
-// What we are going to do in this worker, is wait a certain period of time, and then call a specific API endpoint.
-// Then, take the data from the endpoint, extract out the player information, and publish it to a redis channel.
-// Each data source will have it's own channel, and will subscribe to the channel to get the data in it's own class.
-// The class subscribed to the channel will then take the data, and write it to the database.
-
-// Here are the data sources we will be using:
-// SportsDataIO
-// FantasyFootballCalculator 
 
 namespace FantasyFootballManager.DataService;
 

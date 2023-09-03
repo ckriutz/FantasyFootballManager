@@ -12,6 +12,7 @@ var redisConnectionString = Environment.GetEnvironmentVariable("redisConnectionS
 
 builder.Services.AddDbContext<FantasyFootballManager.DataService.Models.FantasyDbContext>(options => options.UseSqlServer(sqlConnectionString),ServiceLifetime.Transient );
 builder.Services.AddHostedService<FantasyFootballManager.DataService.SleeperPlayersWorker>();
+builder.Services.AddHostedService<FantasyFootballManager.DataService.SleeperDraftWorker>();
 builder.Services.AddHostedService<FantasyFootballManager.DataService.SportsDataIoPlayersWorker>();
 builder.Services.AddHostedService<FantasyFootballManager.DataService.FantasyProsPlayerWorker>();
 builder.Services.AddSingleton<IConnectionMultiplexer>(ConnectionMultiplexer.Connect(redisConnectionString));
