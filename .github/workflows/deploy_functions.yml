@@ -36,10 +36,10 @@ jobs:
         dotnet build --configuration Release
         dotnet publish -c Release -o ./output
         popd
-    - name: List Files After Publish
-      run: |
-        pwd
-        ls -a
+    #- name: List Files After Publish
+    #  run: |
+    #    pwd
+    #    ls -a
     - name: 'Run Azure Functions Action'
       uses: Azure/functions-action@v1
       id: fa

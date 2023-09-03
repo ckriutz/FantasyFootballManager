@@ -1,0 +1,38 @@
+[
+    {
+        "FantasyPlayerKey": "21693",
+        "PlayerID": 21693,
+        "Name": "Joe Burrow",
+        "Team": "CIN",
+        "Position": "QB",
+        "AverageDraftPosition": 66.4,
+        "AverageDraftPositionPPR": 69.8,
+        "ByeWeek": 7,
+        "LastSeasonFantasyPoints": 596.9,
+        "ProjectedFantasyPoints": 557.3,
+        "AuctionValue": 41,
+        "AuctionValuePPR": 41,
+        "AverageDraftPositionIDP": null,
+        "AverageDraftPositionRookie": null,
+        "AverageDraftPositionDynasty": 69.6,
+        "AverageDraftPosition2QB": 18.4
+    },
+    {
+        "FantasyPlayerKey": "732",
+        "PlayerID": 732,
+        "Name": "Matt Ryan",
+        "Team": null,
+        "Position": "QB",
+        "AverageDraftPosition": null,
+        "AverageDraftPositionPPR": null,
+        "ByeWeek": null,
+        "LastSeasonFantasyPoints": 264.3,
+        "ProjectedFantasyPoints": 0.0,
+        "AuctionValue": 0,
+        "AuctionValuePPR": 0,
+        "AverageDraftPositionIDP": null,
+        "AverageDraftPositionRookie": null,
+        "AverageDraftPositionDynasty": null,
+        "AverageDraftPosition2QB": null
+    }
+]
