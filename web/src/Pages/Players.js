@@ -103,7 +103,9 @@ export default function Players()
                                                 <th>Position</th>
                                                 <th>Depth</th>
                                                 <th>Team</th>
+                                                <th>Bye</th>
                                                 <th>Rank</th>
+                                                <th>ADP/PPR</th>
                                                 <th>Proj. Points</th>
                                                 <th></th>
                                             </tr>

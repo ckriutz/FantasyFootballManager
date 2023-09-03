@@ -15,6 +15,8 @@ import {ReactComponent as CurrencyDollar} from '../Components/Icons/CurrencyDoll
 import {ReactComponent as ListNumbers} from '../Components/Icons/ListNumbers.svg'
 import {ReactComponent as Trophy} from '../Components/Icons/Trophy.svg'
 
+import Teams from '../Components/teams.json';
+
 export default function Players()
 {
     const { id } = useParams();
@@ -123,7 +125,12 @@ export default function Players()
         setData(updatedData);
     }
 
-    console.log(data);
+    function getTeamAbbr(teamId) {
+        if (teamId == null) return "";
+        var team = Teams.find(t=> t.Id === teamId);
+        return team.Name;
+
+    }
 
     if (data != null) {
     return (
@@ -291,7 +298,7 @@ export default function Players()
                                     </div>
                                     <div class="datagrid-item">
                                         <div class="datagrid-title">Team Name</div>
-                                        <div class="datagrid-content">{data.teamName}</div>
+                                        <div class="datagrid-content">{getTeamAbbr(data.teamId)}</div>
                                     </div>
                                     <div class="datagrid-item">
                                         <div class="datagrid-title">College</div>

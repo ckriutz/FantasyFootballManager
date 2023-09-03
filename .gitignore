@@ -4,6 +4,9 @@
 # Azure Functions localsettings file
 local.settings.json
 
+#I don't want this in here right now.
+docker-compose.yml
+
 # Azure Functions other folders?
 FantasyFootballManager.Functions/__blobstorage__
 FantasyFootballManager.Functions/__queuestorage__

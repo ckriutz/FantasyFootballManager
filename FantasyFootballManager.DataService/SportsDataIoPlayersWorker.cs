@@ -129,6 +129,23 @@ public sealed class SportsDataIoPlayersWorker : BackgroundService
         return ds.LastUpdated;
     }
 
+    private string FixedPlayer(string playerName)
+    {
+        if(playerName == "D.J. Chark")
+        {
+            return "DJ Chark";
+        }
+        if(playerName == "Kenneth Walker III")
+        {
+            return "Kenneth Walker";
+        }
+        if(playerName == "Mecole Hardman Jr.")
+        {
+            return "Mecole Hardman";
+        }
+        return playerName;
+    }
+
 
     private async Task AddSportsDataIoPlayerToRedis(Models.SportsDataIoPlayer ioPlayer)
     {
@@ -137,6 +154,9 @@ public sealed class SportsDataIoPlayersWorker : BackgroundService
         // First, lets hope, hope, hope, that the player is already in Redis.
         JsonCommands json = _connectionMultiplexer.GetDatabase().JSON();
         SearchCommands ft = _connectionMultiplexer.GetDatabase().FT();
+
+        // Some fixes for weird names. I'm looking at you D.J. Chark. Someday there will be a better way to do this.
+        ioPlayer.Name = FixedPlayer(ioPlayer.Name);
 
         // We need to find the played based on only the the data we have.
         var redisPlayerByKey = ft.Search("idxPlayers", new Query($"@SportsDataIoKey:{ioPlayer.FantasyPlayerKey}")).ToJson().FirstOrDefault();
@@ -163,6 +183,7 @@ public sealed class SportsDataIoPlayersWorker : BackgroundService
                 //There is, so lets deserialize the object to use.
                 fantasyPlayer = JsonSerializer.Deserialize<Models.FantasyPlayer>(redisPlayerByName)!;
             }
+
         }
         // Hopefully we found something.
         if(fantasyPlayer != null)

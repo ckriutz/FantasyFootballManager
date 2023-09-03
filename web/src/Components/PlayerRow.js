@@ -9,7 +9,7 @@ import {ReactComponent as TrendingUp} from '../Components/Icons/TrendingUp.svg';
 import {ReactComponent as TrendingDown} from '../Components/Icons/TrendingDown.svg';
 import {ReactComponent as ThumbsUpFilled} from '../Components/Icons/ThumbsUpFilled.svg'
 import {ReactComponent as ThumbsDownFilled} from '../Components/Icons/ThumbsDownFilled.svg'
-
+import Teams from './teams.json';
 
 export default function PlayerRow(props)
 {
@@ -49,6 +49,13 @@ export default function PlayerRow(props)
         props.updateData(props.player);
     }
 
+    function getTeamAbbr(teamId) {
+        if (teamId == null) return "";
+        var team = Teams.find(t=> t.Id === teamId);
+        return team.Abbreviation;
+
+    }
+
     const TrendingUpData = (proj, diff) => {
         return ( diff > 0 ? <span>{proj}<TrendingUp class="text-success" /></span> : <span>{proj}<TrendingDown class="text-danger" /></span> );
     };
@@ -64,8 +71,10 @@ export default function PlayerRow(props)
             <td><Link class="text-reset" to={`/player/${props.player.sleeperId}`}>{props.player.fullName}</Link></td>
             <td>{props.player.position}</td>
             <td>{props.player.depthChartOrder}</td>
-            <td>{props.player.teamName}</td>
+            <td>{getTeamAbbr(props.player.teamId)}</td>
+            <td>{props.player.byeWeek}</td>
             <td>{props.player.rankEcr}</td>
+            <td>{props.player.averageDraftPositionPPR}</td>
             <td>{TrendingUpData(props.player.projectedFantasyPoints, props.player.projectedFantasyPoints - props.player.lastSeasonFantasyPoints)}</td>
             <td class="text-end">
                 <div class="btn-list">
