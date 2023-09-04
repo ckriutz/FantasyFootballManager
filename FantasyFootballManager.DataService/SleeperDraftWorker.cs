@@ -42,6 +42,10 @@ public sealed class SleeperDraftWorker : BackgroundService
             }
 
             var lastUpdate = await GetLastUpdatedTime();
+
+            _logger.LogInformation($"Last update was {lastUpdate.ToLocalTime()}.");
+            _logger.LogInformation($"Current time is {DateTime.Now}.");
+
             if (lastUpdate.AddMinutes(5) > DateTime.Now)
             {
                 _logger.LogInformation($"Data was updated less than 5mins ago. Exiting. Will update again around {lastUpdate.AddMinutes(5)}");
@@ -111,7 +115,7 @@ public sealed class SleeperDraftWorker : BackgroundService
 
             // Okay, now that this is done, we need to add the updated date to the database.
             var ds = await _context.DataStatus.FirstOrDefaultAsync(d => d.DataSource == "SleeperDraft");
-            ds.LastUpdated = DateTime.Now;
+            ds.LastUpdated = DateTime.Now.ToLocalTime();
             await _context.SaveChangesAsync();
 
             _logger.LogInformation("Done with data update. Going to wait for 5 minutes.");  
@@ -122,6 +126,6 @@ public sealed class SleeperDraftWorker : BackgroundService
     private async Task<DateTime> GetLastUpdatedTime()
     {
         var ds = await _context.DataStatus.FirstOrDefaultAsync(d => d.DataSource == "SleeperDraft");
-        return ds.LastUpdated;
+        return ds.LastUpdated.ToLocalTime();
     }
 }

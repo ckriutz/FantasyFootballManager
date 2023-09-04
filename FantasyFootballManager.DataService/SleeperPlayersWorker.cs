@@ -73,7 +73,7 @@ public sealed class SleeperPlayersWorker : BackgroundService
 
             // Okay, now that this is done, we need to add the updated date to the database.
             var ds = await _context.DataStatus.FirstOrDefaultAsync(d => d.DataSource == "Sleeper");
-            ds.LastUpdated = DateTime.Now;
+            ds.LastUpdated = DateTime.Now.ToLocalTime();
             await _context.SaveChangesAsync();
 
             _logger.LogInformation("Done with data update. Going to wait for 1 day.");  
@@ -154,7 +154,7 @@ public sealed class SleeperPlayersWorker : BackgroundService
     private async Task<DateTime> GetLastUpdatedTime()
     {
         var ds = await _context.DataStatus.FirstOrDefaultAsync(d => d.DataSource == "Sleeper");
-        return ds.LastUpdated;
+        return ds.LastUpdated.ToLocalTime();
     }
 
     private async Task AddSleeperPlayerToRedis(Models.SleeperPlayer player)

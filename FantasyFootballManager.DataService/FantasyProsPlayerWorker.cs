@@ -152,7 +152,7 @@ public sealed class FantasyProsPlayerWorker : BackgroundService
                     prosPlayer.PlayerTeamId = "JAX";
                 }
                 prosPlayer.Team = _context.Teams.FirstOrDefault(t => t.Abbreviation == prosPlayer.PlayerTeamId)!;
-                prosPlayer.LastUpdated = DateTime.Now;
+                prosPlayer.LastUpdated = DateTime.Now.ToLocalTime();
             }
 
             try
@@ -175,7 +175,7 @@ public sealed class FantasyProsPlayerWorker : BackgroundService
     private async Task<DateTime> GetLastUpdatedTime()
     {
         var ds = await _context.DataStatus.FirstOrDefaultAsync(d => d.DataSource == "FantasyPros");
-        return ds.LastUpdated;
+        return ds.LastUpdated.ToLocalTime();
     }
 
     private async Task AddFantasyProsPlayerToRedis(FantasyProsPlayer player)

@@ -59,4 +59,8 @@ public class FantasyPlayer
     public bool IsTaken { get; set; } = false;                     // This is a flag that the user can set to indicate someone else has taken this player.
     public bool IsOnMyTeam { get; set; } = false;                  // This is a flag that the user can set to indicate they have taken this player.
 
+    // These are draft result information from Sleeper
+    public string PickedBy { get; set; } = string.Empty;           // From Sleeper Draft
+    public int? PickNumber { get; set; }                           // From Sleeper Draft
+    public int? PickRound { get; set; }                            // From Sleeper Draft
 }

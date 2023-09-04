@@ -19,7 +19,7 @@ export default function DataStatusCard(props)
                     </div>
                     <div class="col">
                       <h3>{props.dataSource}</h3>
-                      <div class="text-secondary">Last updated {formatDistanceToNowStrict(new Date(props.lastUpdated))} ago</div>
+                      <div class="text-secondary">Updated {formatDistanceToNowStrict(new Date(props.lastUpdated))} ago</div>
                     </div>
                     <div class="col-auto"></div>
                 </div>

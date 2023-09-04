@@ -23,13 +23,13 @@ export default function Home()
                     <div class="container-xl">
                         <div class="row row-deck row-cards">
                             {data && data.map((item) => (
-                                <div class="col-4">
+                                <div class="col-3">
                                     <DataStatusCard dataSource={item.dataSource} lastUpdated={item.lastUpdated} />
                                 </div>
                             ))} 
                         </div>
                         
-                        <div class="col-12">
+                        <div class="col-12 mt-3">
                             <div class="card">
                                 <div class="card-body" style={{height: "10rem"}}></div>
                             </div>

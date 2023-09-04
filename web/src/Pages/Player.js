@@ -392,56 +392,78 @@ export default function Players()
                             </div>
                         </div>
 
-                            <div class="card">
-                                <div class="card-header">
-                                    <h3 class="card-title">API Data</h3>
+                        <div class="card">
+                            <div class="card-header">
+                                <h3 class="card-title">API Data</h3>
+                            </div>
+                            <div class="card-body">
+                                <div class="datagrid">
+                                    <div class="datagrid-item">
+                                        <div class="datagrid-title">Sleeper Id</div>
+                                        <div class="datagrid-content">{data.sleeperId}</div>
+                                    </div>
+                                    <div class="datagrid-item">
+                                        <div class="datagrid-title">SportRadar Id</div>
+                                        <div class="datagrid-content">{data.sportRadarId}</div>
+                                    </div>
+                                    <div class="datagrid-item">
+                                        <div class="datagrid-title">Yahoo Id</div>
+                                        <div class="datagrid-content">{data.yahooId}</div>
+                                    </div>
+                                    <div class="datagrid-item">
+                                        <div class="datagrid-title">SportsData.io Key</div>
+                                        <div class="datagrid-content">{data.sportsDataIoKey}</div>
+                                    </div>
+                                    <div class="datagrid-item">
+                                        <div class="datagrid-title">FantasyPros Player Id</div>
+                                        <div class="datagrid-content">{data.fantasyProsPlayerId}</div>
+                                    </div>
+
+                                    <div class="datagrid-item">
+                                        <div class="datagrid-title">Last Updated Sleeper</div>
+                                        <div class="datagrid-content">
+                                            <ClockCog></ClockCog> {data.lastUpdatedSleeper}
+                                        </div>
+                                    </div>
+
+                                    <div class="datagrid-item">
+                                        <div class="datagrid-title">Last Updated SportsData.io</div>
+                                        <div class="datagrid-content">
+                                            <ClockCog></ClockCog> {data.lastUpdatedSportsDataIo}
+                                        </div>
+                                    </div>
+
+                                    <div class="datagrid-item">
+                                        <div class="datagrid-title">Last Updated FantasyPros</div>
+                                        <div class="datagrid-content">
+                                            <ClockCog></ClockCog> {data.lastUpdatedSportsDataIo}
+                                        </div>
+                                    </div>
+
                                 </div>
-                                <div class="card-body">
-                                    <div class="datagrid">
-                                        <div class="datagrid-item">
-                                            <div class="datagrid-title">Sleeper Id</div>
-                                            <div class="datagrid-content">{data.sleeperId}</div>
-                                        </div>
-                                        <div class="datagrid-item">
-                                            <div class="datagrid-title">SportRadar Id</div>
-                                            <div class="datagrid-content">{data.sportRadarId}</div>
-                                        </div>
-                                        <div class="datagrid-item">
-                                            <div class="datagrid-title">Yahoo Id</div>
-                                            <div class="datagrid-content">{data.yahooId}</div>
-                                        </div>
-                                        <div class="datagrid-item">
-                                            <div class="datagrid-title">SportsData.io Key</div>
-                                            <div class="datagrid-content">{data.sportsDataIoKey}</div>
-                                        </div>
-                                        <div class="datagrid-item">
-                                            <div class="datagrid-title">FantasyPros Player Id</div>
-                                            <div class="datagrid-content">{data.fantasyProsPlayerId}</div>
-                                        </div>
+                            </div>
+                        </div>
 
-                                        <div class="datagrid-item">
-                                            <div class="datagrid-title">Last Updated Sleeper</div>
-                                            <div class="datagrid-content">
-                                                <ClockCog></ClockCog> {data.lastUpdatedSleeper}
-                                            </div>
-                                        </div>
-
-                                        <div class="datagrid-item">
-                                            <div class="datagrid-title">Last Updated SportsData.io</div>
-                                            <div class="datagrid-content">
-                                                <ClockCog></ClockCog> {data.lastUpdatedSportsDataIo}
-                                            </div>
-                                        </div>
-
-                                        <div class="datagrid-item">
-                                            <div class="datagrid-title">Last Updated FantasyPros</div>
-                                            <div class="datagrid-content">
-                                                <ClockCog></ClockCog> {data.lastUpdatedSportsDataIo}
-                                            </div>
-                                        </div>
-
+                        <div class="card">
+                            <div class="card-header">
+                                <h3 class="card-title">Draft Data</h3>
+                            </div>
+                            <div class="card-body">
+                                <div class="datagrid">
+                                    <div class="datagrid-item">
+                                        <div class="datagrid-title">Picked By</div>
+                                        <div class="datagrid-content">{data.pickedBy}</div>
+                                    </div>
+                                    <div class="datagrid-item">
+                                        <div class="datagrid-title">Pick Number</div>
+                                        <div class="datagrid-content">{data.pickNumber}</div>
+                                    </div>
+                                    <div class="datagrid-item">
+                                        <div class="datagrid-title">Pick Round</div>
+                                        <div class="datagrid-content">{data.pickRound}</div>
                                     </div>
                                 </div>
+                            </div>
                             </div>
 
                         </div>
