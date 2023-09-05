@@ -63,6 +63,24 @@ public class FantasyPlayerController : ControllerBase
         return players;
     }
 
+    [HttpGet("myplayers")]
+    public IEnumerable<FantasyPlayer> GetMyPlayers()
+    {
+        List<FantasyPlayer> players = new List<FantasyPlayer>();
+
+        foreach (var doc in _ft.Search("idxPlayers", new Query($"*").Limit(0,1700)).ToJson())
+        {
+            FantasyPlayer p = JsonSerializer.Deserialize<FantasyPlayer>(doc)!;
+            if(p.IsOnMyTeam)
+            {
+                players.Add(p);
+            }
+        }
+        _logger.LogInformation($"Found {players.Count} players on my team.");
+
+        return players;
+    }
+
     [HttpPost("assign/{id}")]
     public IActionResult AssignPlayer(string id)
     {

@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import Navbar from '../Components/Navbar'
 import Header from '../Components/Header'
 import DataStatusCard from '../Components/DataStatusCard';
-import { set } from 'date-fns';
+import PlayerCard from '../Components/PlayerCard';
 
 export default function Home()
 {
@@ -11,6 +11,13 @@ export default function Home()
         fetch(process.env.REACT_APP_API_URL + "/DataStatus")
         .then((response) => response.json())
         .then((data) => setData(data));
+    }, []);
+
+    const [myPlayerData, setMyPLayerData] = useState(null);
+    useEffect(() => {
+        fetch(process.env.REACT_APP_API_URL + "/FantasyPlayer/myplayers")
+        .then((response) => response.json())
+        .then((myPlayerData) => setMyPLayerData(myPlayerData));
     }, []);
 
     return (
@@ -31,7 +38,20 @@ export default function Home()
                         
                         <div class="col-12 mt-3">
                             <div class="card">
-                                <div class="card-body" style={{height: "10rem"}}></div>
+                                <div class="card-body">
+                                    <div class="col-12">
+                                        <div class="card">
+                                            <div class="card-header">
+                                                <h3 class="card-title">My Team</h3>
+                                            </div>
+                                            <div class="list-group list-group-flush">
+                                                {myPlayerData && myPlayerData.map((item) => (
+                                                        <PlayerCard player={item} />
+                                                ))} 
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
