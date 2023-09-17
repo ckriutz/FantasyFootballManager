@@ -5,6 +5,7 @@ using NRedisStack.RedisStackCommands;
 using NRedisStack.Search;
 using NRedisStack.Search.Literals.Enums;
 using System.Text.Json;
+using System.Diagnostics;
 
 namespace FantasyFootballManager.Api.Controllers;
 
@@ -15,26 +16,42 @@ public class FantasyPlayerController : ControllerBase
     private readonly ILogger<FantasyPlayerController> _logger;
     private readonly IConnectionMultiplexer _connectionMultiplexer;
     private readonly SearchCommands _ft;
+    private readonly ActivitySource _activitySource;
 
-    public FantasyPlayerController(ILogger<FantasyPlayerController> logger, IConnectionMultiplexer connectionMultiplexer)
+    public FantasyPlayerController(ILogger<FantasyPlayerController> logger, IConnectionMultiplexer connectionMultiplexer, ActivitySource activitySource)
     {
         _logger = logger;
         _connectionMultiplexer = connectionMultiplexer;
         _ft = _connectionMultiplexer.GetDatabase().FT();
+        _activitySource = activitySource;
     }
 
     [HttpGet("{id}")]
     public FantasyPlayer GetPlayer(string id)
     {
+        using var activity = _activitySource.StartActivity("Get Fantasy Player");
         IDatabase db = _connectionMultiplexer.GetDatabase();
         JsonCommands json = db.JSON();
         FantasyPlayer player = json.Get<FantasyPlayer>($"player:{id}")! ?? null;
-        return player;
+        if(player != null)
+        {
+            activity?.SetTag("player_found", true);
+            activity?.SetTag("player", player.FullName);
+            activity?.SetTag("playerId", player.SleeperId);
+            return player;
+        }
+        else
+        {
+            activity?.SetTag("player_found", false);
+            return new FantasyPlayer();
+        }
+        
     }
 
     [HttpGet("search/{query}")]
     public IEnumerable<FantasyPlayer> SearchPlayers(string query)
     {
+        using var activity = _activitySource.StartActivity("Search Players");
         List<FantasyPlayer> players = new List<FantasyPlayer>();
         string queryString = $"@{query}";
 
@@ -43,7 +60,9 @@ public class FantasyPlayerController : ControllerBase
             FantasyPlayer p = JsonSerializer.Deserialize<FantasyPlayer>(doc)!;
             players.Add(p);
         }
+        activity?.SetTag("query", query);
         _logger.LogInformation($"Found {players.Count} players");
+        activity?.SetTag("player_count", players?.Count);
 
         return players;
     }
@@ -51,14 +70,23 @@ public class FantasyPlayerController : ControllerBase
     [HttpGet]
     public IEnumerable<FantasyPlayer> GetPlayers()
     {
+        using var activity = _activitySource.StartActivity("Get All Fantasy Players");
         List<FantasyPlayer> players = new List<FantasyPlayer>();
 
-        foreach (var doc in _ft.Search("idxPlayers", new Query($"*").Limit(0,1700)).ToJson())
+        var result = _ft.Search("idxPlayers", new Query($"*").Limit(0,1700));
+        if (result == null)
+        {
+            _logger.LogError("No players found");
+            activity?.SetTag("player_count", 0);
+            return players;
+        }
+        foreach (var doc in result.ToJson())
         {
             FantasyPlayer p = JsonSerializer.Deserialize<FantasyPlayer>(doc)!;
             players.Add(p);
         }
-        _logger.LogInformation($"Found {players.Count} players");
+        _logger.LogInformation($"Found {players?.Count} players");
+        activity?.SetTag("player_count", players?.Count);
 
         return players;
     }
@@ -66,6 +94,7 @@ public class FantasyPlayerController : ControllerBase
     [HttpGet("myplayers")]
     public IEnumerable<FantasyPlayer> GetMyPlayers()
     {
+        using var activity = _activitySource.StartActivity("Get My Fantasy Players");
         List<FantasyPlayer> players = new List<FantasyPlayer>();
 
         foreach (var doc in _ft.Search("idxPlayers", new Query($"*").Limit(0,1700)).ToJson())
@@ -77,6 +106,7 @@ public class FantasyPlayerController : ControllerBase
             }
         }
         _logger.LogInformation($"Found {players.Count} players on my team.");
+        activity?.SetTag("my_player_count", players?.Count);
 
         return players;
     }
@@ -84,10 +114,20 @@ public class FantasyPlayerController : ControllerBase
     [HttpPost("assign/{id}")]
     public IActionResult AssignPlayer(string id)
     {
+        using var activity = _activitySource.StartActivity("Assign Player");
         IDatabase db = _connectionMultiplexer.GetDatabase();
         JsonCommands json = db.JSON();
         FantasyPlayer player = json.Get<FantasyPlayer>($"player:{id}")! ?? null;
 
+        activity?.SetTag("player_id", id);
+        if(player == null)
+        {
+            _logger.LogError($"Player {id} not found.");
+            activity?.SetTag("player_found", false);
+            return BadRequest();
+        }
+
+        activity?.SetTag("player_found", true);
         _logger.LogInformation($"Assigning player {player.FullName} to someone elses team.");
 
         player.IsOnMyTeam = false;
@@ -97,18 +137,34 @@ public class FantasyPlayerController : ControllerBase
         _connectionMultiplexer.GetDatabase().KeyExpire($"player:{player.SleeperId}", DateTime.Now.AddDays(1));
 
         if(result)
+        {
+            activity?.SetTag("saved_to_redis", true);
             return Ok();
+        }
         else
+        {
+            activity?.SetTag("saved_to_redis", false);
             return BadRequest();
+        }
     }
 
     [HttpPost("claim/{id}")]
     public IActionResult ClaimPlayer(string id)
     {
+        using var activity = _activitySource.StartActivity("Claim Player");
         IDatabase db = _connectionMultiplexer.GetDatabase();
         JsonCommands json = db.JSON();
         FantasyPlayer player = json.Get<FantasyPlayer>($"player:{id}")! ?? null;
 
+        activity?.SetTag("player_id", id);
+        if (player == null)
+        {
+            _logger.LogError($"Player {id} not found.");
+            activity?.SetTag("player_found", false);
+            return BadRequest();
+        }
+
+        activity?.SetTag("player_found", true);
         _logger.LogInformation($"Claiming player {player.FullName} for my team.");
 
         player.IsOnMyTeam = true;
@@ -118,9 +174,15 @@ public class FantasyPlayerController : ControllerBase
         _connectionMultiplexer.GetDatabase().KeyExpire($"player:{player.SleeperId}", DateTime.Now.AddDays(1));
 
         if(result)
+        {
+            activity?.SetTag("saved_to_redis", true);
             return Ok();
+        }
         else
+        {
+            activity?.SetTag("saved_to_redis", false);
             return BadRequest();
+        }
     }
 
     [HttpPost("release/{id}")]
