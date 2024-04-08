@@ -52,7 +52,7 @@ public sealed class FantasyProsPlayerWorker : BackgroundService
             using HttpClient client = new();
             client.DefaultRequestHeaders.Accept.Clear();
             client.DefaultRequestHeaders.Add("x-api-key", Environment.GetEnvironmentVariable("fantasyProsXApiKey"));
-            var jsonString = await client.GetStringAsync("https://api.fantasypros.com/public/v2/json/nfl/2023/consensus-rankings?position=ALL&week=0");
+            var jsonString = await client.GetStringAsync("https://api.fantasypros.com/public/v2/json/nfl/2024/consensus-rankings?position=ALL&week=0");
             
             var fantasyProsPlayers = JsonSerializer.Deserialize<Models.FantasyProsReturnObject>(jsonString)!;
             _logger.LogInformation($"Found {fantasyProsPlayers.Players.Count()} players from FantasyPros.");
