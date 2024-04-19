@@ -74,7 +74,7 @@ public sealed class SportsDataIoPlayersWorker : BackgroundService
         var player = await _context.SportsDataIoPlayers.FirstOrDefaultAsync(p => p.PlayerID == ioPlayer.PlayerID);
         if (player == null)
         {
-            _logger.LogInformation($"Adding player {ioPlayer.Name} to database.");
+            _logger.LogInformation($"Adding player {ioPlayer.Name} in database.");
 
             if (!String.IsNullOrEmpty(ioPlayer.TeamAbbreviation))
             {       

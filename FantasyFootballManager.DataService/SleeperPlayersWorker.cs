@@ -105,7 +105,7 @@ public sealed class SleeperPlayersWorker : BackgroundService
             existingPlayer.Age = sleeperPlayer.Age;
             existingPlayer.College = sleeperPlayer.College;
 
-            // OKay, do players who aer 'Inactive' probably don't have a team, so we need to see if it's null first.
+            // OKay, do players who are 'Inactive' probably don't have a team, so we need to see if it's null first.
             if (!String.IsNullOrEmpty(sleeperPlayer.TeamAbbreviation))
             {
                 // You know what? Who cares what the existing team is. Just update it.
@@ -191,11 +191,12 @@ public sealed class SleeperPlayersWorker : BackgroundService
             //string serializedFantasyPlayer = JsonSerializer.Serialize(fantasyPlayer);
 
             // Now, we have to update the player in Redis.
+            // Going to set it so it expires in 7 days.
             bool setResult = json.Set($"player:{fantasyPlayer.SleeperId}", "$", JsonSerializer.Serialize(fantasyPlayer));
             if(setResult == true)
             {
                 _logger.LogInformation($"Player {fantasyPlayer.FullName} was added to Redis.");
-                _connectionMultiplexer.GetDatabase().KeyExpire($"player:{fantasyPlayer.SleeperId}", DateTime.Now.AddDays(1));
+                _connectionMultiplexer.GetDatabase().KeyExpire($"player:{fantasyPlayer.SleeperId}", DateTime.Now.AddDays(7));
             }
             else
             {

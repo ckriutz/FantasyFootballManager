@@ -46,7 +46,7 @@ public sealed class FantasyProsPlayerWorker : BackgroundService
             //First, lets check the Sleeper API, and get the newest player data.
             
             //This simulates (for now) the call to the api.
-            //string fileName = "Models/FantasyProsPlayers.json";
+            //string fileName = "Models/FantasyPros3Players.json";
             //string jsonString = File.ReadAllText(fileName);
             
             using HttpClient client = new();
@@ -55,6 +55,13 @@ public sealed class FantasyProsPlayerWorker : BackgroundService
             var jsonString = await client.GetStringAsync("https://api.fantasypros.com/public/v2/json/nfl/2024/consensus-rankings?position=ALL&week=0");
             
             var fantasyProsPlayers = JsonSerializer.Deserialize<Models.FantasyProsReturnObject>(jsonString)!;
+            
+            // Write the data to a file so we can review it,
+            //string fileName = "Models/FantasyProsPlayers.json";
+            //File.WriteAllText(fileName, jsonString);
+
+            //return;
+
             _logger.LogInformation($"Found {fantasyProsPlayers.Players.Count()} players from FantasyPros.");
 
             foreach (var player in fantasyProsPlayers.Players)
@@ -69,24 +76,24 @@ public sealed class FantasyProsPlayerWorker : BackgroundService
             await _context.SaveChangesAsync();
 
             _logger.LogInformation("Done with data update. Going to wait for 1 day.");
+            return;
         }
 
     }
 
     private async Task<Models.FantasyProsPlayer> AddPlayerToDatabaseAsync(Models.FantasyProsPlayer prosPlayer)
     {
-        _logger.LogInformation($"Adding player {prosPlayer.PlayerName} to database.");
-
         // first lets see if we have this player in the database already.
         var existingPlayer = await _context.FantasyProsPlayers.Include("Team").FirstOrDefaultAsync(p => p.PlayerId == prosPlayer.PlayerId);
 
         if(existingPlayer != null)
         {
-            // plate already exists, so lets update it.
+            _logger.LogInformation($"Updating player {prosPlayer.PlayerName} in database.");
+            // player already exists, so lets update it.
             existingPlayer.PlayerName = prosPlayer.PlayerName;
             existingPlayer.SportsdataId = prosPlayer.SportsdataId;
 
-            // OKay, do players who aer 'Inactive' probably don't have a team, so we need to see if it's null first.
+            // Okay, do players who are 'Inactive' probably don't have a team, so we need to see if it's null first.
             if (!String.IsNullOrEmpty(prosPlayer.PlayerTeamId))
             {
                 // You know what? Who cares what the existing team is. Just update it.
@@ -188,7 +195,6 @@ public sealed class FantasyProsPlayerWorker : BackgroundService
 
         try 
         {
-
             // First lets see if we can find the player by it's SportRadarId id.
             var redisPlayerBySportsDataId = ft.Search("idxPlayers", new Query($"@SportRadarId:{player.SportsdataId}")).ToJson().FirstOrDefault();
             if(redisPlayerBySportsDataId != null)
