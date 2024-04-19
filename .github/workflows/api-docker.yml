@@ -7,6 +7,8 @@ env:
 on:
     push:
         branches: [ "main" ]
+        paths:
+          - 'FantasyFootballManager.Api/**'
 
 jobs:
     build-and-push-image:
