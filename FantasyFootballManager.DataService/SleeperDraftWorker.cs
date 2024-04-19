@@ -60,10 +60,19 @@ public sealed class SleeperDraftWorker : BackgroundService
             //string fileName = "Models/Examples/SleeperDraft.json";
             //string jsonString = File.ReadAllText(fileName);
 
-            using HttpClient client = new();
-            client.DefaultRequestHeaders.Accept.Clear();
-            var jsonString = await client.GetStringAsync($"https://api.sleeper.app/v1/draft/{sleeperLeaugeId}/picks");
-
+            var jsonString = string.Empty;
+            try
+            {
+                using HttpClient client = new();
+                client.DefaultRequestHeaders.Accept.Clear();
+                jsonString = await client.GetStringAsync($"https://api.sleeper.app/v1/draft/{sleeperLeaugeId}/picks");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError($"Error getting data from Sleeper API: {ex.Message}");
+                await Task.Delay(TimeSpan.FromMinutes(5), stoppingToken);
+                continue;
+            }
             var sleeperDraftResults = JsonSerializer.Deserialize<List<Models.SleeperDraftResult>>(jsonString)!;
 
             foreach(Models.SleeperDraftResult player in sleeperDraftResults)

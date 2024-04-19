@@ -43,10 +43,20 @@ public sealed class SportsDataIoPlayersWorker : BackgroundService
 
             _logger.LogInformation("Updating SportsDataIO Players");
 
-            using HttpClient client = new();
-            client.DefaultRequestHeaders.Accept.Clear();
-            client.DefaultRequestHeaders.Add("Ocp-Apim-Subscription-Key", Environment.GetEnvironmentVariable("SportsDataIoOcpApimKey"));
-            var jsonString = await client.GetStringAsync("https://fly.sportsdata.io/v3/nfl/stats/json/FantasyPlayers");
+            var jsonString = string.Empty;
+            try
+            {
+                using HttpClient client = new();
+                client.DefaultRequestHeaders.Accept.Clear();
+                client.DefaultRequestHeaders.Add("Ocp-Apim-Subscription-Key", Environment.GetEnvironmentVariable("SportsDataIoOcpApimKey"));
+                jsonString = await client.GetStringAsync("https://fly.sportsdata.io/v3/nfl/stats/json/FantasyPlayers");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError($"Error getting data from SportsData.io: {ex.Message}");
+                await Task.Delay(TimeSpan.FromMinutes(5), stoppingToken);
+                continue;
+            }
 
             // This simulates (for now) the call to the api.
             //string fileName = "Models/SportsDataIoPlayers.json";

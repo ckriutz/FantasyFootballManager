@@ -48,24 +48,34 @@ public sealed class FantasyProsPlayerWorker : BackgroundService
             //This simulates (for now) the call to the api.
             //string fileName = "Models/FantasyPros3Players.json";
             //string jsonString = File.ReadAllText(fileName);
-            
-            using HttpClient client = new();
-            client.DefaultRequestHeaders.Accept.Clear();
-            client.DefaultRequestHeaders.Add("x-api-key", Environment.GetEnvironmentVariable("fantasyProsXApiKey"));
-            var jsonString = await client.GetStringAsync("https://api.fantasypros.com/public/v2/json/nfl/2024/consensus-rankings?position=ALL&week=0");
+
+            var jsonString = string.Empty;
+            try
+            {
+                using HttpClient client = new();
+                client.DefaultRequestHeaders.Accept.Clear();
+                client.DefaultRequestHeaders.Add("x-api-key", Environment.GetEnvironmentVariable("fantasyProsXApiKey"));
+                jsonString = await client.GetStringAsync("https://api.fantasypros.com/public/v2/json/nfl/2024/consensus-rankings?position=ALL&week=0");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError($"Error getting data from FantasyPros: {ex.Message}");
+                await Task.Delay(TimeSpan.FromMinutes(5), stoppingToken);
+                continue;
+            }
             
             var fantasyProsPlayers = JsonSerializer.Deserialize<Models.FantasyProsReturnObject>(jsonString)!;
-            
-            // Write the data to a file so we can review it,
-            //string fileName = "Models/FantasyProsPlayers.json";
-            //File.WriteAllText(fileName, jsonString);
-
-            //return;
 
             _logger.LogInformation($"Found {fantasyProsPlayers.Players.Count()} players from FantasyPros.");
 
             foreach (var player in fantasyProsPlayers.Players)
             {
+                if( player.SportsdataId == null)
+                {
+                    // Some players, I don't know why yet, don't have a sportsdata_id. I don't want to make the column nullable.
+                    _logger.LogWarning($"Player {player.PlayerName} does not have a SportsDataId. Skipping.");
+                    continue;
+                }
                 await AddPlayerToDatabaseAsync(player);
                 
             }

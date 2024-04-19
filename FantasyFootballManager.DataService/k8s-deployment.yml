@@ -1,0 +1,42 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: fantasyfootballmanager-dataservice
+  namespace: ffootballmanager
+  labels:
+    app: ffootballmanager
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ffootballmanager
+  template:
+    metadata:
+      labels:
+        app: ffootballmanager
+    spec:
+      containers:
+      - name: fantasyfootballmanager
+        image: ghcr.io/ckriutz/fantasyfootballmanager:dataservice-latest
+        imagePullPolicy: Always
+        env:
+        - name: sqlConnectionString
+          valueFrom:
+            configMapKeyRef:
+              name: fantasy-football-config
+              key: sqlConnectionString
+        - name: redisConnectionString
+          valueFrom:
+            configMapKeyRef:
+              name: fantasy-football-config
+              key: redisConnectionString
+        - name: fantasyProsXApiKey
+          valueFrom:
+            configMapKeyRef:
+              name: fantasy-football-config
+              key: fantasyProsXApiKey
+        - name: SportsDataIoOcpApimKey
+          valueFrom:
+            configMapKeyRef:
+              name: fantasy-football-config
+              key: SportsDataIoOcpApimKey

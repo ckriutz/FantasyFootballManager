@@ -51,10 +51,20 @@ public sealed class SleeperPlayersWorker : BackgroundService
            // string fileName = "Models/SleeperPlayersSmall.json";
             //string jsonString = File.ReadAllText(fileName);
             
-            using HttpClient client = new();
-            client.DefaultRequestHeaders.Accept.Clear();
-            var jsonString = await client.GetStringAsync("https://api.sleeper.app/v1/players/nfl");
-            
+            var jsonString = string.Empty;
+            try
+            {
+                using HttpClient client = new();
+                client.DefaultRequestHeaders.Accept.Clear();
+                jsonString = await client.GetStringAsync("https://api.sleeper.app/v1/players/nfl");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError($"Error getting data from Sleeper API: {ex.Message}");
+                await Task.Delay(TimeSpan.FromMinutes(5), stoppingToken);
+                continue;
+            }
+
             var sleeperPlayersDictionary = JsonSerializer.Deserialize<Dictionary<string, Models.SleeperPlayer>>(jsonString)!;
 
             _logger.LogInformation($"Sleeper API returned {sleeperPlayersDictionary.Count} players.");
