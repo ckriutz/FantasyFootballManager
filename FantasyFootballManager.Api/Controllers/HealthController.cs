@@ -1,6 +1,4 @@
-using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
-using System.Diagnostics;
 
 namespace FantasyFootballManager.Api.Controllers;
 
@@ -8,12 +6,10 @@ namespace FantasyFootballManager.Api.Controllers;
 [Route("[controller]")]
 public class HealthController : ControllerBase
 {
-    public static ActivitySource activitySource = new ActivitySource("FantasyFootballManager.Api");
-    private readonly ActivitySource _activitySource;
 
-    public HealthController(ActivitySource activitySource)
+    public HealthController()
     {
-        _activitySource = activitySource;
+
     }
 
     //return okay
