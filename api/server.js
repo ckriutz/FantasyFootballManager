@@ -5,6 +5,7 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const cors = require('cors');
 const { DescribeParameterEncryptionResultSet1 } = require('tedious/lib/always-encrypted/types');
+const redis = require('redis');
 
 // Create an instance of Express
 const app = express();
@@ -30,10 +31,30 @@ const config = {
   }
 };
 
-const connection = new Connection(config);
+//const client = redis.createClient({
+//  host: '192.168.0.239', // replace with your Redis server IP
+//  port: 6379, // replace with your Redis server port
+//  trustServerCertificate: true
+//});
 
-// Server port
-const port = process.env.PORT || 3000;
+const client = redis.createClient({
+    socket: {
+      host: '192.168.0.239',
+      port: 6379,
+      trustServerCertificate: true
+    },
+});
+
+client.on('error', function(err) {
+  console.log('Redis Client Error', err);
+});
+
+client.on('connect', function() {
+  console.log('Connected to Redis');
+});
+
+// this is for the SQL Server connection.
+const connection = new Connection(config);
 
 app.get('/datastatus', (req, res) => {
     // Retrieves all statuses from the database.
@@ -52,7 +73,16 @@ app.get('/datastatus', (req, res) => {
           });
         } 
     });
-  });
+});
+
+// Get a player by id
+app.get('/fantasyplayer/:id', (req, res) => {
+    // Connect to Redis
+    client.connect();
+
+    client.quit();
+    
+});
 
 // Execute the SQL statement
 function executeStatement() {
@@ -97,6 +127,9 @@ function executeStatement() {
         connection.execSql(request);
     });
 }
+
+// Server port
+const port = process.env.PORT || 3000;
 
 // Start the server
 app.listen(port, () => {

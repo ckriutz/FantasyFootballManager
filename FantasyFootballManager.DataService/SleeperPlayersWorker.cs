@@ -2,13 +2,9 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using StackExchange.Redis;
 using System.Text.Json;
-using System.Text.Json.Serialization;
 using Microsoft.EntityFrameworkCore;
 using NRedisStack;
 using NRedisStack.RedisStackCommands;
-using NRedisStack.Search;
-using NRedisStack.Search.Literals.Enums;
-using System.Text.Json;
 
 
 namespace FantasyFootballManager.DataService;
@@ -48,7 +44,7 @@ public sealed class SleeperPlayersWorker : BackgroundService
 
             // First, lets check the Sleeper API, and get the newest player data.
             // This simulates (for now) the call to the api.
-           // string fileName = "Models/SleeperPlayersSmall.json";
+            // string fileName = "Models/SleeperPlayersSmall.json";
             //string jsonString = File.ReadAllText(fileName);
             
             var jsonString = string.Empty;
