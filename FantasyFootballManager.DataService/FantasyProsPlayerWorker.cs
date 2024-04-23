@@ -1,14 +1,10 @@
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using StackExchange.Redis;
 using System.Text.Json;
-using System.Text.Json.Serialization;
 using Microsoft.EntityFrameworkCore;
 using FantasyFootballManager.DataService.Models;
-using Microsoft.IdentityModel.Tokens;
-using NRedisStack;
-using NRedisStack.RedisStackCommands;
-using NRedisStack.Search;
+
+using Redis.OM.Contracts;
 
 namespace FantasyFootballManager.DataService;
 
@@ -16,13 +12,13 @@ public sealed class FantasyProsPlayerWorker : BackgroundService
 {
     private readonly ILogger<FantasyProsPlayerWorker> _logger;
     private readonly Models.FantasyDbContext _context;
-    private readonly IConnectionMultiplexer _connectionMultiplexer;
+    private readonly IRedisConnectionProvider _connectionProvider;
 
-   public FantasyProsPlayerWorker(ILogger<FantasyProsPlayerWorker> logger, Models.FantasyDbContext context, IConnectionMultiplexer multiplexer)
+   public FantasyProsPlayerWorker(ILogger<FantasyProsPlayerWorker> logger, Models.FantasyDbContext context, IRedisConnectionProvider redisConnectionProvider)
     {
         _logger = logger;
         _context = context;
-        _connectionMultiplexer = multiplexer;
+        _connectionProvider = redisConnectionProvider;
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -42,12 +38,6 @@ public sealed class FantasyProsPlayerWorker : BackgroundService
                 await Task.Delay(TimeSpan.FromMinutes(5), stoppingToken);
                 continue;
             }
-
-            //First, lets check the Sleeper API, and get the newest player data.
-            
-            //This simulates (for now) the call to the api.
-            //string fileName = "Models/FantasyPros3Players.json";
-            //string jsonString = File.ReadAllText(fileName);
 
             var jsonString = string.Empty;
             try
@@ -146,7 +136,7 @@ public sealed class FantasyProsPlayerWorker : BackgroundService
             {
                 await _context.SaveChangesAsync();
 
-                await AddFantasyProsPlayerToRedis(prosPlayer);
+                await AddFantasyProsPlayerToRedisOM(prosPlayer);
             }
             catch (Exception ex)
             {
@@ -182,7 +172,7 @@ public sealed class FantasyProsPlayerWorker : BackgroundService
                 _logger.LogError($"Error adding player {prosPlayer.PlayerName} to database. {ex.Message}");
             }
 
-            await AddFantasyProsPlayerToRedis(prosPlayer);
+            await AddFantasyProsPlayerToRedisOM(prosPlayer);
 
             return prosPlayer;
         }
@@ -195,64 +185,52 @@ public sealed class FantasyProsPlayerWorker : BackgroundService
         return ds.LastUpdated.ToLocalTime();
     }
 
-    private async Task AddFantasyProsPlayerToRedis(FantasyProsPlayer player)
+    private async Task AddFantasyProsPlayerToRedisOM(FantasyProsPlayer player)
     {
-        //check to see if we find a player in Redis based on the sportsdata_id field.
-        JsonCommands json = _connectionMultiplexer.GetDatabase().JSON();
-        SearchCommands ft = _connectionMultiplexer.GetDatabase().FT();
-
-        Models.FantasyPlayer fantasyPlayer = null;
-
-        try 
+        var players = _connectionProvider.RedisCollection<Models.FantasyPlayer>();
+        var existingPlayer = players.Where(p => p.SportRadarId == player.SportsdataId).FirstOrDefault();
+        if(existingPlayer != null)
         {
-            // First lets see if we can find the player by it's SportRadarId id.
-            var redisPlayerBySportsDataId = ft.Search("idxPlayers", new Query($"@SportRadarId:{player.SportsdataId}")).ToJson().FirstOrDefault();
-            if(redisPlayerBySportsDataId != null)
-            {
-                _logger.LogInformation($"Found existing player in Redis by it's Key! Updating.");
-
-                //There is, so lets deserialize the object to use.
-                fantasyPlayer = JsonSerializer.Deserialize<Models.FantasyPlayer>(redisPlayerBySportsDataId)!;
-                fantasyPlayer.UpdatePlayerWithProsData(player);
-
-                json.Set($"player:{fantasyPlayer.SleeperId}", "$", JsonSerializer.Serialize(fantasyPlayer));
-                _connectionMultiplexer.GetDatabase().KeyExpire($"player:{fantasyPlayer.SleeperId}", DateTime.Now.AddDays(1));
-                return;
-            }
-
-            // Now lets try and find the player by it's yahooid.
-            var redisPlayerByYahooId = ft.Search("idxPlayers", new Query($"@YahooId:{player.PlayerYahooId}")).ToJson().FirstOrDefault();
-            if(redisPlayerByYahooId != null)
-            {
-                //There is, so lets deserialize the object to use.
-                fantasyPlayer = JsonSerializer.Deserialize<Models.FantasyPlayer>(redisPlayerByYahooId)!;
-                fantasyPlayer.UpdatePlayerWithProsData(player);
-
-                json.Set($"player:{fantasyPlayer.SleeperId}", "$", JsonSerializer.Serialize(fantasyPlayer));
-                _connectionMultiplexer.GetDatabase().KeyExpire($"player:{fantasyPlayer.SleeperId}", DateTime.Now.AddDays(1));
-                return;
-            }
-
-            // Last resort, lets see if we can find them by nane.
-            var redisPlayerByName= ft.Search("idxPlayers", new Query($"@FullName:{player.PlayerName}")).ToJson().FirstOrDefault();
-            if(redisPlayerByName != null)
-            {
-                //There is, so lets deserialize the object to use.
-                fantasyPlayer = JsonSerializer.Deserialize<Models.FantasyPlayer>(redisPlayerByName)!;
-                fantasyPlayer.UpdatePlayerWithProsData(player);
-
-                json.Set($"player:{fantasyPlayer.SleeperId}", "$", JsonSerializer.Serialize(fantasyPlayer));
-                _connectionMultiplexer.GetDatabase().KeyExpire($"player:{fantasyPlayer.SleeperId}", DateTime.Now.AddDays(1));
-                return;
-            }
-
-            _logger.LogWarning($"Could not find player {player.PlayerName} in Redis.");
-            return;
+            _logger.LogInformation($"Found existing player in Redis by it's Key! Updating.");
+            existingPlayer.UpdatePlayerWithProsData(player);
+            await players.UpdateAsync(existingPlayer);
         }
-        catch (Exception ex)
+        else
         {
-            _logger.LogError($"Error adding player {player.PlayerName} to Redis. {ex.Message}");
-            return;
+            //Lets try by YahooId
+            if(player.PlayerYahooId != null)
+            {   
+                Console.WriteLine($"Trying to find player {player.PlayerName} by YahooId: {player.PlayerYahooId}");
+                int yahooIdInt = 0;
+                if (Int32.TryParse(player.PlayerYahooId, out yahooIdInt) == true)
+                {
+                    existingPlayer = players.Where(p => p.YahooId == yahooIdInt).FirstOrDefault();
+                    if (existingPlayer != null)
+                    {
+                        _logger.LogInformation($"Found existing player in Redis by it's YahooId! Updating.");
+                        existingPlayer.UpdatePlayerWithProsData(player);
+                        await players.UpdateAsync(existingPlayer);
+                    }
+                }
+            }
+
+            //Ugh, lets try by name.
+            if(existingPlayer == null)
+            {
+                existingPlayer = players.Where(p => p.FullName == player.PlayerName).FirstOrDefault();
+                if (existingPlayer != null)
+                {
+                    _logger.LogInformation($"Found existing player in Redis by it's Name! Updating.");
+                    existingPlayer.UpdatePlayerWithProsData(player);
+                    await players.UpdateAsync(existingPlayer);
+                }
+                else
+                {
+                    _logger.LogWarning($"Could not find player {player.PlayerName} in Redis, giving up.");
+                }
+            }
         }
     }
+
+
 }

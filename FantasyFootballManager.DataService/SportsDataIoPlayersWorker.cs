@@ -1,12 +1,9 @@
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using StackExchange.Redis;
 using System.Text.Json;
-using System.Text.Json.Serialization;
 using Microsoft.EntityFrameworkCore;
-using NRedisStack;
-using NRedisStack.RedisStackCommands;
-using NRedisStack.Search;
+
+using Redis.OM.Contracts;
 
 namespace FantasyFootballManager.DataService;
 
@@ -14,13 +11,14 @@ public sealed class SportsDataIoPlayersWorker : BackgroundService
 {
     private readonly ILogger<SportsDataIoPlayersWorker> _logger;
     private readonly Models.FantasyDbContext _context;
-    private readonly IConnectionMultiplexer _connectionMultiplexer;
+    private readonly IRedisConnectionProvider _connectionProvider;
 
-   public SportsDataIoPlayersWorker(ILogger<SportsDataIoPlayersWorker> logger, Models.FantasyDbContext context, IConnectionMultiplexer multiplexer)
+   public SportsDataIoPlayersWorker(ILogger<SportsDataIoPlayersWorker> logger, Models.FantasyDbContext context, IRedisConnectionProvider connectionProvider)
     {
         _logger = logger;
         _context = context;
-        _connectionMultiplexer = multiplexer;
+
+        _connectionProvider = connectionProvider;
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -58,10 +56,6 @@ public sealed class SportsDataIoPlayersWorker : BackgroundService
                 continue;
             }
 
-            // This simulates (for now) the call to the api.
-            //string fileName = "Models/SportsDataIoPlayers.json";
-            //string jsonString = File.ReadAllText(fileName);
-
             var sportsDataIoPlayers = JsonSerializer.Deserialize<List<Models.SportsDataIoPlayer>>(jsonString)!;
             _logger.LogInformation($"Found {sportsDataIoPlayers.Count} players from SportsData.io.");
 
@@ -94,7 +88,7 @@ public sealed class SportsDataIoPlayersWorker : BackgroundService
             await _context.SportsDataIoPlayers.AddAsync(ioPlayer);
             await _context.SaveChangesAsync();
 
-            await AddSportsDataIoPlayerToRedis(player);
+            await AddSportsDataIOPlayerToRedisOM(ioPlayer);
 
             return ioPlayer;
         }
@@ -128,7 +122,7 @@ public sealed class SportsDataIoPlayersWorker : BackgroundService
 
             await _context.SaveChangesAsync();
 
-            await AddSportsDataIoPlayerToRedis(player);
+            await AddSportsDataIOPlayerToRedisOM(ioPlayer);
             return player;
         }
     }
@@ -156,62 +150,32 @@ public sealed class SportsDataIoPlayersWorker : BackgroundService
         return playerName;
     }
 
-
-    private async Task AddSportsDataIoPlayerToRedis(Models.SportsDataIoPlayer ioPlayer)
+    private async Task AddSportsDataIOPlayerToRedisOM(Models.SportsDataIoPlayer ioPlayer)
     {
-        Models.FantasyPlayer fantasyPlayer = null;
-
-        // First, lets hope, hope, hope, that the player is already in Redis.
-        JsonCommands json = _connectionMultiplexer.GetDatabase().JSON();
-        SearchCommands ft = _connectionMultiplexer.GetDatabase().FT();
-
-        // Some fixes for weird names. I'm looking at you D.J. Chark. Someday there will be a better way to do this.
-        ioPlayer.Name = FixedPlayer(ioPlayer.Name);
-
-        // We need to find the played based on only the the data we have.
-        var redisPlayerByKey = ft.Search("idxPlayers", new Query($"@SportsDataIoKey:{ioPlayer.FantasyPlayerKey}")).ToJson().FirstOrDefault();
-        if(redisPlayerByKey != null)
+        var players = _connectionProvider.RedisCollection<Models.FantasyPlayer>();
+        var existingPlayer = players.Where(p => p.SportsDataIoKey == ioPlayer.FantasyPlayerKey).FirstOrDefault();
+        if(existingPlayer != null)
         {
-            _logger.LogInformation($"Found existing player in Redis by it's Key! Updating.");
-
-            //There is, so lets deserialize the object to use.
-            fantasyPlayer = JsonSerializer.Deserialize<Models.FantasyPlayer>(redisPlayerByKey)!;
+            // Okay, we found the player, so we need to update the player.
+            existingPlayer.UpdatePlayerWithIoData(ioPlayer);
+            players.Update(existingPlayer);
         }
         else
         {
-            // Here is the hard part. We need to find the player in Redis by matching their name.
-            // We need to do this because the SportsData.io player does not have a unique identifier that matches with anyone really.
-            // This will return an list of players, but there should only be one.
-            //foreach (var doc in ft.Search("idx1", new Query($"@FullName:{ioPlayer.Name}")).ToJson())
-            var redisPlayerByName = ft.Search("idxPlayers", new Query($"@FullName:{ioPlayer.Name}")).ToJson().FirstOrDefault();
+            // So, maybe we can find the player by name, and update them that way?
+            ioPlayer.Name = FixedPlayer(ioPlayer.Name);
+            existingPlayer = players.Where(p => p.FullName == ioPlayer.Name).FirstOrDefault();
 
-            // Is there an object?
-            if(redisPlayerByName != null)
+            if(existingPlayer != null)
             {
-                _logger.LogInformation($"Found existing player in Redis by name. Updating.");
-
-                //There is, so lets deserialize the object to use.
-                fantasyPlayer = JsonSerializer.Deserialize<Models.FantasyPlayer>(redisPlayerByName)!;
+                // Okay, we found the player, so we need to update the player.
+                existingPlayer.UpdatePlayerWithIoData(ioPlayer);
+                players.Update(existingPlayer);
             }
-
+            else
+            {
+                _logger.LogWarning($"We didn't find {ioPlayer.Name} in the database, so we're going to skip.");
+            }
         }
-        // Hopefully we found something.
-        if(fantasyPlayer != null)
-        {
-            // We need to update the FantasyPlayer object with the ioPlayer object.
-            fantasyPlayer.UpdatePlayerWithIoData(ioPlayer);
-
-            // We have to serialize the updated FantasyPlayer object.
-            //string serializedFantasyPlayer = JsonSerializer.Serialize(fantasyPlayer);
-
-            // Now, we have to update the player in Redis.
-            json.Set($"player:{fantasyPlayer.SleeperId}", "$", JsonSerializer.Serialize(fantasyPlayer));
-            _connectionMultiplexer.GetDatabase().KeyExpire($"player:{fantasyPlayer.SleeperId}", DateTime.Now.AddDays(1));
-        }
-        else
-        {
-            _logger.LogWarning($"We didn't find {ioPlayer.Name} in the database, so we're going to skip.");
-        }
-
     }
 }

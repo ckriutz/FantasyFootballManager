@@ -19,5 +19,6 @@
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="7.0.1" />
     <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.18.1" />
     <PackageReference Include="NRedisStack" Version="0.8.1" />
+    <PackageReference Include="Redis.OM" Version="0.7.0" />
   </ItemGroup>
 </Project>

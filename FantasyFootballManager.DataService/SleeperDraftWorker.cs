@@ -1,12 +1,9 @@
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using StackExchange.Redis;
 using System.Text.Json;
-using System.Text.Json.Serialization;
 using Microsoft.EntityFrameworkCore;
-using NRedisStack;
-using NRedisStack.RedisStackCommands;
-using NRedisStack.Search;
+
+using Redis.OM.Contracts;
 
 namespace FantasyFootballManager.DataService;
 
@@ -14,15 +11,15 @@ public sealed class SleeperDraftWorker : BackgroundService
 {
     private readonly ILogger<SleeperDraftWorker> _logger;
     private readonly Models.FantasyDbContext _context;
-    private readonly IConnectionMultiplexer _connectionMultiplexer;
+    private readonly IRedisConnectionProvider _connectionProvider;
 
     private readonly string mySleeperUserId = Environment.GetEnvironmentVariable("mySleeperId");
     private readonly string sleeperLeaugeId = Environment.GetEnvironmentVariable("leagueId");
-   public SleeperDraftWorker(ILogger<SleeperDraftWorker> logger, Models.FantasyDbContext context, IConnectionMultiplexer multiplexer)
+   public SleeperDraftWorker(ILogger<SleeperDraftWorker> logger, Models.FantasyDbContext context, IRedisConnectionProvider connectionProvider)
     {
         _logger = logger;
         _context = context;
-        _connectionMultiplexer = multiplexer;
+        _connectionProvider = connectionProvider;
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -55,11 +52,6 @@ public sealed class SleeperDraftWorker : BackgroundService
 
             _logger.LogInformation("Updating Sleeper Draft Info");
 
-            // First, lets check the Sleeper API, and get the newest player data.
-            // This simulates (for now) the call to the api.
-            //string fileName = "Models/Examples/SleeperDraft.json";
-            //string jsonString = File.ReadAllText(fileName);
-
             var jsonString = string.Empty;
             try
             {
@@ -81,17 +73,17 @@ public sealed class SleeperDraftWorker : BackgroundService
 
                 try
                 {
-                    JsonCommands json =_connectionMultiplexer.GetDatabase().JSON();
-                    var data = json.Get($"player:{player.PlayerId}");
-                    if(!data.IsNull)
+                    // Lets look up the player in Redis.
+                    var players = _connectionProvider.RedisCollection<Models.FantasyPlayer>();
+                    var existingPlayer = players.Where(p => p.SleeperId == player.PlayerId).FirstOrDefault();
+                    if(existingPlayer != null)
                     {
-                        _logger.LogInformation($"Player {player.Metadata.FirstName} {player.Metadata.LastName} is in Redis. Updating.");
-                        fantasyPlayer = JsonSerializer.Deserialize<Models.FantasyPlayer>(data.ToString())!;
-                        fantasyPlayer.PickedBy = player.PickedBy;
-                        fantasyPlayer.PickNumber = player.PickNo;
-                        fantasyPlayer.PickRound = player.Round;
+                        _logger.LogInformation($"Player {player.PlayerId} is in Redis. Updating.");
+                        existingPlayer.PickedBy = player.PickedBy;
+                        existingPlayer.PickNumber = player.PickNo;
+                        existingPlayer.PickRound = player.Round;
 
-                        // Now we set the IsOnMyTeam flag.
+                         // Now we set the IsOnMyTeam flag.
                         if(player.PickedBy == mySleeperUserId)
                         {
                             fantasyPlayer.IsOnMyTeam = true;
@@ -103,16 +95,8 @@ public sealed class SleeperDraftWorker : BackgroundService
                             fantasyPlayer.IsTaken = true;
                         }
 
-                        bool setResult = json.Set($"player:{fantasyPlayer.SleeperId}", "$", JsonSerializer.Serialize(fantasyPlayer));
-                        if(setResult == true)
-                        {
-                            _logger.LogInformation($"Player {fantasyPlayer.FullName} was updated with draft information.");
-                            _connectionMultiplexer.GetDatabase().KeyExpire($"player:{fantasyPlayer.SleeperId}", DateTime.Now.AddDays(1));
-                        }
-                        else
-                        {
-                            _logger.LogWarning($"Player {fantasyPlayer.FullName} was not updated in Redis.");
-                        }
+                        await players.UpdateAsync(existingPlayer);
+                        _logger.LogInformation($"Player {fantasyPlayer.FullName} was updated with draft information.");
                     }
                 }
                 catch (Exception ex)

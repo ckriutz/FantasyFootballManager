@@ -1,11 +1,7 @@
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using StackExchange.Redis;
-using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
-using NRedisStack;
-using NRedisStack.RedisStackCommands;
-
+using Redis.OM.Contracts;
 
 namespace FantasyFootballManager.DataService;
 
@@ -13,13 +9,13 @@ public sealed class SleeperPlayersWorker : BackgroundService
 {
     private readonly ILogger<SleeperPlayersWorker> _logger;
     private readonly Models.FantasyDbContext _context;
-    private readonly IConnectionMultiplexer _connectionMultiplexer;
+    private readonly IRedisConnectionProvider _connectionProvider;
 
-   public SleeperPlayersWorker(ILogger<SleeperPlayersWorker> logger, Models.FantasyDbContext context, IConnectionMultiplexer multiplexer)
+   public SleeperPlayersWorker(ILogger<SleeperPlayersWorker> logger, Models.FantasyDbContext context, IRedisConnectionProvider connectionProvider)
     {
         _logger = logger;
         _context = context;
-        _connectionMultiplexer = multiplexer;
+        _connectionProvider = connectionProvider;
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -41,11 +37,6 @@ public sealed class SleeperPlayersWorker : BackgroundService
                 await Task.Delay(TimeSpan.FromMinutes(5), stoppingToken);
                 continue;
             }
-
-            // First, lets check the Sleeper API, and get the newest player data.
-            // This simulates (for now) the call to the api.
-            // string fileName = "Models/SleeperPlayersSmall.json";
-            //string jsonString = File.ReadAllText(fileName);
             
             var jsonString = string.Empty;
             try
@@ -61,7 +52,7 @@ public sealed class SleeperPlayersWorker : BackgroundService
                 continue;
             }
 
-            var sleeperPlayersDictionary = JsonSerializer.Deserialize<Dictionary<string, Models.SleeperPlayer>>(jsonString)!;
+            var sleeperPlayersDictionary = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, Models.SleeperPlayer>>(jsonString)!;
 
             _logger.LogInformation($"Sleeper API returned {sleeperPlayersDictionary.Count} players.");
 
@@ -135,7 +126,7 @@ public sealed class SleeperPlayersWorker : BackgroundService
             await _context.SaveChangesAsync();
 
             // Lets publish this player into Redis.
-            await AddSleeperPlayerToRedis(existingPlayer);
+            await AddSleeperPlayerToRedisORM(sleeperPlayer);
 
 
             return existingPlayer;
@@ -147,12 +138,11 @@ public sealed class SleeperPlayersWorker : BackgroundService
             sleeperPlayer.Team = _context.Teams.FirstOrDefault(t => t.Abbreviation == sleeperPlayer.TeamAbbreviation);
         }
  
-
         _context.SleeperPlayers.Add(sleeperPlayer);
         await _context.SaveChangesAsync();
         
         // Lets publish this player into Redis.
-        await AddSleeperPlayerToRedis(sleeperPlayer);
+        await AddSleeperPlayerToRedisORM(sleeperPlayer);
 
         return sleeperPlayer;
     }
@@ -163,55 +153,38 @@ public sealed class SleeperPlayersWorker : BackgroundService
         return ds.LastUpdated.ToLocalTime();
     }
 
-    private async Task AddSleeperPlayerToRedis(Models.SleeperPlayer player)
+    private async Task AddSleeperPlayerToRedisORM(Models.SleeperPlayer player)
     {
-        // Short Circuit this if the player is not worthy.
-        if(player.SearchRank == null || player.SearchRank >= 9999999)
+        // In this case, I think we're going to insert every player, even the ones not worthy.
+        // The API can filter those out if we want.
+        var players = _connectionProvider.RedisCollection<Models.FantasyPlayer>();
+        var existingPlayer = players.Where(p => p.SleeperId == player.PlayerId).FirstOrDefault();
+        if(existingPlayer != null)
         {
-            _logger.LogInformation($"Player {player.FullName} is not worthy. Skipping.");
-            return;
-        }
-
-        // Lets create a Fantasy Player we will use or adding to Redis.
-        Models.FantasyPlayer fantasyPlayer = new Models.FantasyPlayer();
-
-        try
-        {
-            // Lets see if the obejct is already in Redis, and if so, lets just update that because other data might be in there.
-            // Learned something... we need to see if the data is there before we deserialize.
-            JsonCommands json =_connectionMultiplexer.GetDatabase().JSON();
-            var data = json.Get($"player:{player.PlayerId}");
-            if(!data.IsNull)
+            // There is an existing player in Redis. Lets update it.
+            _logger.LogInformation($"Player {player.FullName} - {player.PlayerId} is in Redis. Updating.");
+            existingPlayer.UpdatePlayerWithSleeperData(player);
+            if (!String.IsNullOrEmpty(player.TeamAbbreviation))
             {
-                _logger.LogInformation($"Player {player.FullName} is in Redis. Updating.");
-                fantasyPlayer = JsonSerializer.Deserialize<Models.FantasyPlayer>(data.ToString())!;
+                // Okay, so we have one, we just need update the player with this.
+                // Both the Team Name, and the Team ID.
+                existingPlayer.TeamName = _context.Teams.FirstOrDefault(t => t.Abbreviation == player.TeamAbbreviation)?.Name;
+                existingPlayer.TeamId = _context.Teams.FirstOrDefault(t => t.Abbreviation == player.TeamAbbreviation)?.Id;
             }
-
-            fantasyPlayer.UpdatePlayerWithSleeperData(player);
+            await players.UpdateAsync(existingPlayer);
+        }
+        else
+        {
+            // This is a new player. Lets add it.
+            _logger.LogInformation($"Player {player.FullName} - {player.PlayerId} is not in Redis. Adding.");
+            Models.FantasyPlayer fantasyPlayer = new Models.FantasyPlayer();
             if (!String.IsNullOrEmpty(player.TeamAbbreviation))
             {
                 fantasyPlayer.TeamName = _context.Teams.FirstOrDefault(t => t.Id == player.Team.Id)?.Name;
+                fantasyPlayer.TeamId = _context.Teams.FirstOrDefault(t => t.Abbreviation == player.TeamAbbreviation)?.Id;
             }
-            
-            // We have to serialize the updated FantasyPlayer object.
-            //string serializedFantasyPlayer = JsonSerializer.Serialize(fantasyPlayer);
-
-            // Now, we have to update the player in Redis.
-            // Going to set it so it expires in 7 days.
-            bool setResult = json.Set($"player:{fantasyPlayer.SleeperId}", "$", JsonSerializer.Serialize(fantasyPlayer));
-            if(setResult == true)
-            {
-                _logger.LogInformation($"Player {fantasyPlayer.FullName} was added to Redis.");
-                _connectionMultiplexer.GetDatabase().KeyExpire($"player:{fantasyPlayer.SleeperId}", DateTime.Now.AddDays(7));
-            }
-            else
-            {
-                _logger.LogWarning($"Player {fantasyPlayer.FullName} was not added to Redis.");
-            }
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError($"Error adding player {fantasyPlayer.FullName} to Redis. {ex.Message}");
+            fantasyPlayer.UpdatePlayerWithSleeperData(player);
+            await players.InsertAsync(fantasyPlayer);
         }
     }
 }
