@@ -1,11 +1,11 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: fantasyfootballmanager-api
+  name: fantasyfootballmanager-nodeapi
   namespace: ffootballmanager
   labels:
-    app: fantasyfootballmanager-api
-    kubernetes.io/service-name: fantasyfootballmanager-service
+    app: fantasyfootballmanager-nodeapi
+    kubernetes.io/service-name: fantasyfootballmanager-nodeapi
 spec:
   type: LoadBalancer
   ports:
@@ -13,4 +13,4 @@ spec:
     protocol: TCP
     name: http
   selector:
-    app: fantasyfootballmanager-api
+    app: fantasyfootballmanager-nodeapi

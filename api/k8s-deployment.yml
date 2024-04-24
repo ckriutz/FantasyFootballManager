@@ -31,4 +31,4 @@ spec:
               name: fantasy-football-config
               key: redisConnectionString
         ports:
-        - containerPort: 5288
+        - containerPort: 3000
