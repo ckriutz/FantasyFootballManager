@@ -4,16 +4,16 @@ metadata:
   name: fantasyfootballmanager-nodeapi
   namespace: ffootballmanager
   labels:
-    app: ffootballmanager
+    app: ffootballmanager-nodeapi
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: ffootballmanager
+      app: ffootballmanager-nodeapi
   template:
     metadata:
       labels:
-        app: ffootballmanager
+        app: ffootballmanager-nodeapi
     spec:
       containers:
       - name: fantasyfootballmanager
