@@ -21,11 +21,11 @@ export default function Players()
 {
     const { id } = useParams();
 
-    const url = process.env.REACT_APP_API_URL + "/FantasyPlayer/" + id;
+    const url = process.env.REACT_APP_API_URL + "/fantasyplayer/" + id;
 
     const [data, setData] = useState(null);
     useEffect(() => {
-        fetch(process.env.REACT_APP_API_URL + "/FantasyPlayer/" + id)
+        fetch(process.env.REACT_APP_API_URL + "/fantasyplayer/" + id)
         .then((response) => response.json())
         .then((data) => setData(data));
     }, [])
@@ -40,7 +40,7 @@ export default function Players()
     function onClickThumbsUp(e) {
         e.preventDefault();
         
-        fetch(process.env.REACT_APP_API_URL + '/FantasyPlayer/thumbsup/' + data.sleeperId, {
+        fetch(process.env.REACT_APP_API_URL + '/fantasyplayer/thumbsup/' + data.sleeperId, {
             method: 'POST'
         });
 
@@ -65,7 +65,7 @@ export default function Players()
     {
         e.preventDefault();
         
-        fetch(process.env.REACT_APP_API_URL + '/FantasyPlayer/thumbsdown/' + data.sleeperId, {
+        fetch(process.env.REACT_APP_API_URL + '/fantasyplayer/thumbsdown/' + data.sleeperId, {
             method: 'POST'
         });
 
@@ -88,7 +88,7 @@ export default function Players()
     function claimPlayer(e) {
         console.log("Claiming player " + data.fullName + "...");
         e.preventDefault();
-        fetch(process.env.REACT_APP_API_URL + '/FantasyPlayer/claim/' + data.sleeperId, {
+        fetch(process.env.REACT_APP_API_URL + '/fantasyplayer/claim/' + data.sleeperId, {
             method: 'POST'
         });
 
@@ -102,7 +102,7 @@ export default function Players()
     function assignPlayer(e) {       
         console.log("Assigning player " + data.fullName + "...");
         e.preventDefault();
-        fetch(process.env.REACT_APP_API_URL + '/FantasyPlayer/assign/' + data.sleeperId, {
+        fetch(process.env.REACT_APP_API_URL + '/fantasyplayer/assign/' + data.sleeperId, {
             method: 'POST'
         });
 
@@ -115,7 +115,7 @@ export default function Players()
     function releasePlayer(e) {
         console.log("Resetting player " + data.fullName + "...");
         e.preventDefault();
-        fetch(process.env.REACT_APP_API_URL + '/FantasyPlayer/release/' + data.sleeperId, {
+        fetch(process.env.REACT_APP_API_URL + '/fantasyplayer/release/' + data.sleeperId, {
             method: 'POST'
         });
 

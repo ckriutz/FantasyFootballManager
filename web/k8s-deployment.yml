@@ -1,21 +1,21 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: fantasyfootballmanager-nodeapi
+  name: fantasyfootballmanager-web
   namespace: ffootballmanager
 spec:
   selector:
     matchLabels:
-      app: fantasyfootballmanager-nodeapi
+      app: fantasyfootballmanager-web
   replicas: 1 # tells deployment to run 2 pods matching the template
   template:
     metadata:
       labels:
-        app: fantasyfootballmanager-nodeapi
+        app: fantasyfootballmanager-web
     spec:
       containers:
       - name: fantasyfootballmanager
-        image: ghcr.io/ckriutz/fantasyfootballmanager:nodeapi-latest
+        image: ghcr.io/ckriutz/fantasyfootballmanager:web-latest
         imagePullPolicy: Always
         env:
         - name: sqlConnectionString

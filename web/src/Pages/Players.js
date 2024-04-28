@@ -14,7 +14,7 @@ export default function Players()
     const [includeLosers, setIncludeLosers] = useState(false);
 
     useEffect(() => {
-        fetch(process.env.REACT_APP_API_URL + "/FantasyPlayer")
+        fetch(process.env.REACT_APP_API_URL + "/fantasyplayers")
         .then((response) => response.json())
         .then((data) => setData(data));
     }, []);
@@ -47,13 +47,13 @@ export default function Players()
 
     function addFilter(position) {
         if (position == "ALL" || position == null) {
-            fetch(process.env.REACT_APP_API_URL + "/FantasyPlayer")
+            fetch(process.env.REACT_APP_API_URL + "/fantasyplayers")
             .then((response) => response.json())
             .then((data) => setData(data));
             return;
         }
         else {
-            fetch(process.env.REACT_APP_API_URL + "/FantasyPlayer/search/Position:" + position)
+            fetch(process.env.REACT_APP_API_URL + "/fantasyplayers/search/Position:" + position)
             .then((response) => response.json())
             .then((data) => setData(data));
         }

@@ -8,3 +8,4 @@ data:
   redisConnectionString: ''
   fantasyProsXApiKey: ''
   SportsDataIoOcpApimKey: ''
+  redisOMConnectionString: ''

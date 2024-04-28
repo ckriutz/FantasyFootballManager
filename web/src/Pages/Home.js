@@ -8,16 +8,16 @@ export default function Home()
 {
     const [data, setData] = useState(null);
     useEffect(() => {
-        fetch(process.env.REACT_APP_API_URL + "/DataStatus")
+        fetch(process.env.REACT_APP_API_URL + "/datastatus")
         .then((response) => response.json())
-        .then((data) => setData(data));
+        .then((data) => setData(data)).catch((error) => console.log(error));
     }, []);
 
     const [myPlayerData, setMyPLayerData] = useState(null);
     useEffect(() => {
-        fetch(process.env.REACT_APP_API_URL + "/FantasyPlayer/myplayers")
+        fetch(process.env.REACT_APP_API_URL + "/myplayers")
         .then((response) => response.json())
-        .then((myPlayerData) => setMyPLayerData(myPlayerData));
+        .then((myPlayerData) => setMyPLayerData(myPlayerData)).catch((error) => console.log(error));
     }, []);
 
     return (

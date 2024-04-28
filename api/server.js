@@ -113,7 +113,6 @@ app.get('/fantasyplayers', (req, res) => {
     console.log('Fetching all players from Redis');
 
     fantasyRepository.search().return.all().then((players) => {
-        console.log('Players: ' + JSON.stringify(players));
         res.json(players);
     }).finally(() => {
         client.quit()
@@ -123,18 +122,14 @@ app.get('/fantasyplayers', (req, res) => {
 });
 
 // Get a player by id
-app.get('/fantasyplayer/:id', (req, res) => {
-    client.connect();
+app.get('/fantasyplayer/:id', async (req, res) => {
+    await client.connect();
 
     console.log('Fetching player ' + req.params.id + ' from Redis');
 
-    fantasyRepository.search().where("SleeperId").equals(req.params.id).return.first().then((player) => {
-        res.json(player);
-    }).finally(() => {
-        client.quit()
-    }).catch((err) => {
-        console.log('Error fetching player: ' + err);
-    });
+    player = await fantasyRepository.search().where("SleeperId").equals(req.params.id).return.first()
+    await client.quit();
+    res.json(player);
 });
 
 // Get my players
@@ -152,25 +147,40 @@ app.get('/myplayers', (req, res) => {
     });
 });
 
-// Update the player to give a thumbs up
-app.post('/fantasyplayer/thumbsup/:id', (req, res) => {
+// Get number of players with an id
+app.get('/fantasyplayer/count/:id', (req, res) => {
     client.connect();
 
-    console.log('Updating player ' + req.params.id + ' to thumbs up');
-    const player = fantasyRepository.search().where("SleeperId").equals(req.params.id).return.first()
-    .then((data) => {
-      data.IsThumbsUp = true;
-      data.IsThumbsDown = false;
-      console.log('Player: ' + JSON.stringify(data));
-      return data;
-    }).then((data) => {
-      console.log('Saving player: ' + JSON.stringify(data));
-      fantasyRepository.save(data).then((player) => { res.json(player); })
-    }).catch((err) => {
-      console.log('Error updating player: ' + err);
+    console.log('Fetching player ' + req.params.id + ' from Redis');
+
+    fantasyRepository.search().where("SleeperId").equals(req.params.id).return.count().then((count) => {
+        res.json(count);
     }).finally(() => {
-      client.quit()
+        client.quit()
+    }).catch((err) => {
+        console.log('Error fetching player: ' + err);
     });
+});
+
+// Update the player to give a thumbs up
+app.post('/fantasyplayer/thumbsup/:id', async (req, res) => {
+    await client.connect();
+
+    console.log('Updating player ' + req.params.id + ' to thumbs up');
+    player = await fantasyRepository.search().where("SleeperId").equals(req.params.id).return.first();
+    player.IsThumbsUp = true;
+    player.IsThumbsDown = false;
+    upPlayer = await fantasyRepository.save(player);
+    console.log('Saved player player: ' + JSON.stringify(upPlayer));
+    await client.quit();
+    res.json(upPlayer);
+
+    //fantasyRepository.save(data).then((player) => { res.json(player)
+    //}).catch((err) => {
+    //  console.log('Error updating player: ' + err);
+    //}).finally(() => {
+    //  client.quit()
+    //});
 });
 
 // Update the player to give a thumbs down
