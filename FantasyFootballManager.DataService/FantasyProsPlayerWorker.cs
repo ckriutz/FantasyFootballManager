@@ -112,7 +112,7 @@ public sealed class FantasyProsPlayerWorker : BackgroundService
             existingPlayer.PlayerPositions = prosPlayer.PlayerPositions;
             existingPlayer.PlayerEligibility = prosPlayer.PlayerEligibility;
             existingPlayer.PlayerShortName = prosPlayer.PlayerShortName;
-            existingPlayer.PlayerYahooPositions = prosPlayer.PlayerYahooPositions;
+            existingPlayer.PlayerYahooPositions = prosPlayer.PlayerYahooPositions ?? "UNK";
             existingPlayer.PlayerPageUrl = prosPlayer.PlayerPageUrl;
             existingPlayer.PlayerFilename = prosPlayer.PlayerFilename;
             existingPlayer.PlayerSquareImageUrl = prosPlayer.PlayerSquareImageUrl;
@@ -141,6 +141,7 @@ public sealed class FantasyProsPlayerWorker : BackgroundService
             catch (Exception ex)
             {
                 _logger.LogError($"Error updating player {prosPlayer.PlayerName} in database. {ex.Message}");
+            
             }
            
             
@@ -158,6 +159,8 @@ public sealed class FantasyProsPlayerWorker : BackgroundService
                 {
                     prosPlayer.PlayerTeamId = "JAX";
                 }
+                // Quick check to see if PlayerYahooPositions is null. If it is, set it to UNK.
+                prosPlayer.PlayerYahooPositions = String.IsNullOrEmpty(prosPlayer.PlayerYahooPositions) ? prosPlayer.PlayerYahooPositions = "UNK" : prosPlayer.PlayerYahooPositions;
                 prosPlayer.Team = _context.Teams.FirstOrDefault(t => t.Abbreviation == prosPlayer.PlayerTeamId)!;
                 prosPlayer.LastUpdated = DateTime.Now.ToLocalTime();
             }

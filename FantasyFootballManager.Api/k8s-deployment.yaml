@@ -29,6 +29,6 @@ spec:
           valueFrom:
             configMapKeyRef:
               name: fantasy-football-config
-              key: redisConnectionString
+              key: redisOMConnectionString
         ports:
         - containerPort: 5180

@@ -11,18 +11,17 @@ using Redis.OM.Contracts;
 HostApplicationBuilder builder = Host.CreateApplicationBuilder(args);
 
 var sqlConnectionString = Environment.GetEnvironmentVariable("sqlConnectionString");
-var redisConnectionString = Environment.GetEnvironmentVariable("redisConnectionString");
+var redisOmConnectionString = Environment.GetEnvironmentVariable("redisOMConnectionString");
 
 builder.Services.AddDbContext<FantasyFootballManager.DataService.Models.FantasyDbContext>(options => options.UseSqlServer(sqlConnectionString),ServiceLifetime.Transient );
 builder.Services.AddHostedService<FantasyFootballManager.DataService.SleeperPlayersWorker>();
 builder.Services.AddHostedService<FantasyFootballManager.DataService.SleeperDraftWorker>();
 builder.Services.AddHostedService<FantasyFootballManager.DataService.SportsDataIoPlayersWorker>();
 builder.Services.AddHostedService<FantasyFootballManager.DataService.FantasyProsPlayerWorker>();
-builder.Services.AddSingleton<IConnectionMultiplexer>(ConnectionMultiplexer.Connect(redisConnectionString));
-builder.Services.AddSingleton<IRedisConnectionProvider>(new RedisConnectionProvider("redis://192.168.0.239:6379"));
+builder.Services.AddSingleton<IRedisConnectionProvider>(new RedisConnectionProvider(redisOmConnectionString));
 builder.Services.AddLogging(configure => configure.AddConsole());
 
-var provider = new Redis.OM.RedisConnectionProvider("redis://192.168.0.239:6379");
+var provider = new Redis.OM.RedisConnectionProvider(redisOmConnectionString);
 provider.Connection.CreateIndex(typeof(FantasyFootballManager.DataService.Models.FantasyPlayer));
 
 IHost host = builder.Build();
