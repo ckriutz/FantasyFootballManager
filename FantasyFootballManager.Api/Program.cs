@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using System.Security.Cryptography.X509Certificates;
 using FantasyFootballManager.DataService.Models;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.EntityFrameworkCore;
@@ -57,7 +58,8 @@ app.MapGet("/fantasyplayer/{sleeperId}", (string sleeperId) =>
 app.MapGet("/fantasyplayers", () => 
 {
     Console.WriteLine($"Getting all players from redis.");
-    var players = fantasyplayers.ToArray();
+    var players = fantasyplayers.ToList();
+    players = players.OrderBy(x => x.SearchRank).ToList();
     return players;
     
 });
