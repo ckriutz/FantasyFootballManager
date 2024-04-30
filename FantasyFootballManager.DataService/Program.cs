@@ -1,11 +1,6 @@
-﻿using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.EntityFrameworkCore;
-using StackExchange.Redis;
-using Microsoft.Extensions.Configuration;
+﻿
 using Redis.OM;
-using Microsoft.EntityFrameworkCore.Infrastructure;
+
 using Redis.OM.Contracts;
 
 HostApplicationBuilder builder = Host.CreateApplicationBuilder(args);
