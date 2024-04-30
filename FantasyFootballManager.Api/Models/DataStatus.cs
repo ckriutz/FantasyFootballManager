@@ -1,5 +1,5 @@
-using System.Text.Json.Serialization;
-using System.ComponentModel.DataAnnotations.Schema;
+
+using System;
 
 namespace FantasyFootballManager.DataService.Models;
 public class DataStatus

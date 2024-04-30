@@ -2,6 +2,7 @@
 // This object represents the combination of all the data in a way that we can use.
 // We are not going to write this to the database, but instead, we will push this into redis.
 
+using System;
 using Redis.OM.Modeling;
 
 namespace FantasyFootballManager.DataService.Models;
