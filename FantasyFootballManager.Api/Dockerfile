@@ -1,10 +1,10 @@
 # Use the official image as a parent image.
-FROM --platform=$BUILDPLATFORM mcr.microsoft.com/dotnet/aspnet:8.0 AS base
+FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS base
 WORKDIR /app
 EXPOSE 3992
 
 # Use the official image from the .NET SDK
-FROM --platform=$BUILDPLATFORM mcr.microsoft.com/dotnet/sdk:8.0.203-cbl-mariner2.0 AS build
+FROM mcr.microsoft.com/dotnet/sdk:8.0.203-cbl-mariner2.0 AS build
 WORKDIR /src
 
 # Copy the .csproj and restore as distinct layers
