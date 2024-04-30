@@ -1,18 +1,17 @@
-FROM mcr.microsoft.com/dotnet/runtime:7.0 AS base
-WORKDIR /app
-
-FROM mcr.microsoft.com/dotnet/sdk:7.0 AS build
+# Use the official image from the .NET SDK
+FROM --platform=$BUILDPLATFORM mcr.microsoft.com/dotnet/sdk:7.0.407 AS build
+ARG TARGETARCH
 WORKDIR /src
-COPY ["FantasyFootballManager.DataService.csproj", "./"]
-RUN dotnet restore "FantasyFootballManager.DataService.csproj"
+
+# Copy the .csproj and restore as distinct layers
 COPY . .
-WORKDIR "/src/."
-RUN dotnet build "FantasyFootballManager.DataService.csproj" -c Release -o /app/build
+RUN dotnet restore "FantasyFootballManager.DataService.csproj" -a $TARGETARCH
 
-FROM build AS publish
-RUN dotnet publish "FantasyFootballManager.DataService.csproj" -c Release -o /app/publish
+RUN dotnet publish "FantasyFootballManager.DataService.csproj" -a $TARGETARCH --no-restore -c Release -o /app/publish
 
-FROM base AS final
+# Final stage / image
+FROM --platform=$BUILDPLATFORM mcr.microsoft.com/dotnet/aspnet:7.0.17 AS final
 WORKDIR /app
-COPY --from=publish /app/publish .
+COPY --from=build /app/publish .
+EXPOSE 3992
 ENTRYPOINT ["dotnet", "FantasyFootballManager.DataService.dll"]

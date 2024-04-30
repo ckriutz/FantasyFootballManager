@@ -1,4 +1,8 @@
 ﻿
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using Redis.OM;
 
 using Redis.OM.Contracts;
