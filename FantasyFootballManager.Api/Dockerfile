@@ -4,7 +4,7 @@ WORKDIR /app
 EXPOSE 3992
 
 # Use the official image from the .NET SDK
-FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
+FROM mcr.microsoft.com/dotnet/sdk:8.0.203-cbl-mariner2.0 AS build
 WORKDIR /src
 
 # Copy the .csproj and restore as distinct layers
