@@ -29,7 +29,7 @@ spec:
           valueFrom:
             configMapKeyRef:
               name: fantasy-football-config
-              key: redisConnectionString
+              key: redisOMConnectionString
         - name: fantasyProsXApiKey
           valueFrom:
             configMapKeyRef:
