@@ -6,7 +6,6 @@ WORKDIR /src
 # Copy the .csproj and restore as distinct layers
 COPY . .
 RUN dotnet restore "FantasyFootballManager.Api.csproj" -a $TARGETARCH
-
 RUN dotnet publish "FantasyFootballManager.Api.csproj" -a $TARGETARCH --no-restore -c Release -o /app/publish
 
 # Final stage / image
