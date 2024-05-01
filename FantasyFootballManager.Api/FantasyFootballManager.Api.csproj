@@ -5,6 +5,7 @@
     <Nullable>enable</Nullable>
     <ServerGarbageCollection>true</ServerGarbageCollection>
     <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
+    <ContainerRepository>fantasyfootballmanager:api</ContainerRepository>
   </PropertyGroup>
 
   <ItemGroup>
