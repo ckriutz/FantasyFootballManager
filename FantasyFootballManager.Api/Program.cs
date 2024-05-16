@@ -84,6 +84,10 @@ app.MapPost("/fantasyplayer/claim/{sleeperId}", (string sleeperId) =>
 {
     Console.WriteLine($"Claiming player {sleeperId} from redis.");
     var player = fantasyplayers.Where(x => x.SleeperId == sleeperId).FirstOrDefault();
+    if(player == null)
+    {
+        return null;
+    }
     player.IsOnMyTeam = true;
     player.IsTaken = false;
     fantasyplayers.Update(player);
