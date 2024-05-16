@@ -20,34 +20,19 @@ jobs:
             contents: read
             packages: write
         steps:
-        - name: Setup QEMU
-          uses: docker/setup-qemu-action@v2
-
-        - name: Set up Docker Buildx
-          uses: docker/setup-buildx-action@v2
-          with:
-            platforms: linux/arm64
-
-        - name: Log into registry
-          uses: docker/login-action@v2.2.0
-          with:
-            registry: ${{ env.REGISTRY }}
-            username: ${{ github.actor }}
-            password: ${{ secrets.GITHUB_TOKEN }}
-
-        - name: Extract metadata (tags, labels) for Docker
-          id: meta
-          uses: docker/metadata-action@9ec57ed1fcdbf14dcef7dfbe97b2010124a938b7
-          with:
-              images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
-
-        - name: Build and push Docker image
-          uses: docker/build-push-action@v4.1.1
-          with:
-            context: "{{defaultContext}}:api"
-            platforms: linux/amd64,linux/arm64
-            push: true
-            tags: |
-                ghcr.io/ckriutz/fantasyfootballmanager:nodeapi-latest
-                ghcr.io/ckriutz/fantasyfootballmanager:nodeapi.${{ github.sha }}
-            labels: ${{ steps.meta.outputs.tags }}
+          - uses: actions/checkout@v3
+          - name: Set up .NET 8
+            uses: actions/setup-dotnet@v2
+            with:
+              dotnet-version: '8.0.x'
+          - name: Restore dependencies
+            run: dotnet restore
+          - name: Build
+            run: dotnet build --no-restore
+          - name: Build and publish Docker image
+            run: dotnet publish /t:PublishContainer -r linux-arm64
+          - name: change image tag
+            run: docker tag 'fantasyfootballmanager-api:latest' 'ghcr.io/ckriutz/fantasyfootballmanager:api-latest'
+  
+          - name: 'Build Inventory Image'
+            run: docker push ghcr.io/ckriutz/fantasyfootballmanager:api-latest

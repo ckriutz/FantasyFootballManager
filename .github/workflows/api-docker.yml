@@ -32,7 +32,7 @@ jobs:
         - name: Build and publish Docker image
           run: dotnet publish /t:PublishContainer -r linux-arm64
         - name: change image tag
-          run: docker tag 'fantasyfootballmanager:api' 'ghcr.io/ckriutz/fantasyfootballmanager:api-latest'
+          run: docker tag 'fantasyfootballmanager-api:latest' 'ghcr.io/ckriutz/fantasyfootballmanager:api-latest'
 
         - name: 'Build Inventory Image'
           run: docker push ghcr.io/ckriutz/fantasyfootballmanager:api-latest
