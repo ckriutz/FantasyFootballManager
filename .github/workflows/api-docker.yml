@@ -37,27 +37,3 @@ jobs:
           run: docker login ghcr.io -u ckriutz -p ${{ secrets.GITHUB_TOKEN }}
         - name: 'Build Inventory Image'
           run: docker push ghcr.io/ckriutz/fantasyfootballmanager-api:latest
-
-        #- name: Log into registry
-        #  uses: docker/login-action@v2.2.0
-        #  with:
-        #    registry: ${{ env.REGISTRY }}
-        #    username: ${{ github.actor }}
-        #    password: ${{ secrets.GITHUB_TOKEN }}
-
-        #- name: Extract metadata (tags, labels) for Docker
-        #  id: meta
-        #  uses: docker/metadata-action@9ec57ed1fcdbf14dcef7dfbe97b2010124a938b7
-        #  with:
-        #      images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
-
-        #- name: Build and push Docker image
-        #  uses: docker/build-push-action@v5.3.0
-        #  with:
-        #    context: "{{defaultContext}}:FantasyFootballManager.Api"
-        #    platforms: linux/arm64
-        #    push: true
-        #    tags: |
-        #        ghcr.io/ckriutz/fantasyfootballmanager:api-latest
-        #        ghcr.io/ckriutz/fantasyfootballmanager:api.${{ github.sha }}
-        #    labels: ${{ steps.meta.outputs.tags }}
