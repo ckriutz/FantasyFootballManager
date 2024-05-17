@@ -12,6 +12,9 @@ using Redis.OM.Contracts;
 var sqlConnectionString = Environment.GetEnvironmentVariable("sqlConnectionString");
 var redisOMConnectionString = Environment.GetEnvironmentVariable("redisOMConnectionString");
 
+Console.WriteLine($"SQL Connection String: {sqlConnectionString}");
+Console.WriteLine($"Redis Connection String: {redisOMConnectionString}");
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.

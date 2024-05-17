@@ -12,6 +12,9 @@ HostApplicationBuilder builder = Host.CreateApplicationBuilder(args);
 var sqlConnectionString = Environment.GetEnvironmentVariable("sqlConnectionString");
 var redisOmConnectionString = Environment.GetEnvironmentVariable("redisOMConnectionString");
 
+Console.WriteLine($"sqlConnectionString: {sqlConnectionString}");
+Console.WriteLine($"redisOmConnectionString: {redisOmConnectionString}");
+
 builder.Services.AddDbContext<FantasyFootballManager.DataService.Models.FantasyDbContext>(options => options.UseSqlServer(sqlConnectionString),ServiceLifetime.Transient );
 builder.Services.AddHostedService<FantasyFootballManager.DataService.SleeperPlayersWorker>();
 builder.Services.AddHostedService<FantasyFootballManager.DataService.SleeperDraftWorker>();

@@ -25,7 +25,7 @@ spec:
             configMapKeyRef:
               name: fantasy-football-config
               key: sqlConnectionString
-        - name: redisConnectionString
+        - name: redisOMConnectionString
           valueFrom:
             configMapKeyRef:
               name: fantasy-football-config
