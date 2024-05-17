@@ -1,7 +1,7 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: ffootballmanager-api
+  name: fantasyfootballmanager-api
   namespace: ffootballmanager
   labels:
     app: ffootballmanager-api
