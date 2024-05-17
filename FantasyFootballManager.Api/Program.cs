@@ -125,6 +125,10 @@ app.MapPost("/fantasyplayer/thumbsup/{sleeperId}", (string sleeperId) =>
 {
     Console.WriteLine($"Thumbs up player {sleeperId}.");
     var player = fantasyplayers.Where(x => x.SleeperId == sleeperId).FirstOrDefault();
+    if(player == null)
+    {
+        return null;
+    }
     player.IsThumbsUp = true;
     player.IsThumbsDown = false;
     fantasyplayers.Update(player);
