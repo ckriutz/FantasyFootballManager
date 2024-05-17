@@ -34,6 +34,13 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
+// Enable CORS for everything
+app.UseCors(builder => builder
+    .AllowAnyOrigin()
+    .AllowAnyMethod()
+    .AllowAnyHeader());
+
 var provider = app.Services.GetRequiredService<IRedisConnectionProvider>();
 var fantasyplayers = provider.RedisCollection<FantasyPlayer>();
 

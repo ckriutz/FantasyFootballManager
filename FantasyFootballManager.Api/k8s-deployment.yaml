@@ -1,19 +1,19 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: fantasyfootballmanager-api
+  name: ffootballmanager-api
   namespace: ffootballmanager
   labels:
-    app: ffootballmanager
+    app: ffootballmanager-api
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: ffootballmanager
+      app: ffootballmanager-api
   template:
     metadata:
       labels:
-        app: ffootballmanager
+        app: ffootballmanager-api
     spec:
       containers:
       - name: fantasyfootballmanager
