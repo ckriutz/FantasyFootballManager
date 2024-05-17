@@ -7,8 +7,8 @@ env:
 on:
     push:
         branches: [ "main" ]
-        #paths:
-        #  - 'FantasyFootballManager.Api/**'
+        paths:
+          - 'FantasyFootballManager.Api/**'
 
 jobs:
     build-and-push-image:
@@ -35,7 +35,6 @@ jobs:
           run: docker tag 'fantasyfootballmanager-api:latest' 'ghcr.io/ckriutz/fantasyfootballmanager-api:latest'
         - name: Log in to GHCR
           run: docker login ghcr.io -u ckriutz -p ${{ secrets.GITHUB_TOKEN }}
-        
         - name: 'Build Inventory Image'
           run: docker push ghcr.io/ckriutz/fantasyfootballmanager-api:latest
 
