@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
       - name: fantasyfootballmanager
-        image: ghcr.io/ckriutz/fantasyfootballmanager:dataservice-latest
+        image: ghcr.io/ckriutz/fantasyfootballmanager-dataservice:latest
         imagePullPolicy: Always
         env:
         - name: sqlConnectionString
