@@ -99,6 +99,10 @@ app.MapPost("/fantasyplayer/assign/{sleeperId}", (string sleeperId) =>
 {
     Console.WriteLine($"Assigning player {sleeperId} to another team.");
     var player = fantasyplayers.Where(x => x.SleeperId == sleeperId).FirstOrDefault();
+    if(player == null)
+    {
+        return null;
+    }
     player.IsOnMyTeam = false;
     player.IsTaken = true;
     fantasyplayers.Update(player);
