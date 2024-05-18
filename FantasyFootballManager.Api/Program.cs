@@ -70,7 +70,12 @@ app.MapGet("/fantasyplayers", () =>
     var players = fantasyplayers.ToList();
     players = players.OrderBy(x => x.SearchRank).ToList();
     return players;
-    
+});
+
+app.MapGet("/rankedfantasyplayers", () => 
+{
+    Console.WriteLine($"Getting all ranked players from redis.");
+    var players = fantasyplayers.Where(x => x.Tier > 0).ToList();
 });
 
 // Get my players from redis.Om
@@ -155,6 +160,9 @@ app.MapPost("/fantasyplayer/thumbsdown/{sleeperId}", (string sleeperId) =>
     fantasyplayers.Update(player);
     return player;
 });
+
+// Set the /health endpoint to return OK
+app.MapGet("/health", () => "OK");
 
 app.Run();
 

@@ -54,19 +54,19 @@ public class FantasyPlayer
     public double PlayerOwnedAvg { get; set; }                     // From FantasyPros
     public double PlayerOwnedEspn { get; set; }                    // From FantasyPros
     public int PlayerOwnedYahoo { get; set; }                      // From FantasyPros
-    public int RankEcr { get; set; }                               // From FantasyPros
+    [Indexed] public int RankEcr { get; set; }                               // From FantasyPros
     public string RankMin { get; set; }                            // From FantasyPros
     public string RankMax { get; set; }                            // From FantasyPros
     public string RankAve { get; set; }                            // From FantasyPros
     public string RankStd { get; set; }                            // From FantasyPros
     public string PosRank { get; set; }                            // From FantasyPros
-    public int Tier { get; set; }                                  // From FantasyPros
+    [Indexed] public int Tier { get; set; }                                  // From FantasyPros
     public DateTime LastUpdatedFantasyPros { get; set; }           // From FantasyPros
 
     // These are the operational items for the FantasyPlayer
     public bool IsThumbsUp { get; set; } = false;                  // This is a flag that the user can set to indicate they like this player.
     public bool IsThumbsDown { get; set; } = false;                // This is a flag that the user can set to indicate they don't like this player.
-    public bool IsTaken { get; set; } = false;                     // This is a flag that the user can set to indicate someone else has taken this player.
+    [Indexed] public bool IsTaken { get; set; } = false;                     // This is a flag that the user can set to indicate someone else has taken this player.
     [Indexed] public bool IsOnMyTeam { get; set; } = false;                  // This is a flag that the user can set to indicate they have taken this player.
 
     // These are draft result information from Sleeper

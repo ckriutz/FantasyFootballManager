@@ -2,7 +2,6 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
-
 using Redis.OM.Contracts;
 
 namespace FantasyFootballManager.DataService;
@@ -84,6 +83,7 @@ public sealed class SportsDataIoPlayersWorker : BackgroundService
             {       
                 ioPlayer.PlayerTeam = _context.Teams.FirstOrDefault(t => t.Abbreviation == ioPlayer.TeamAbbreviation);
             }
+            ioPlayer.LastUpdated = DateTime.Now.ToLocalTime();
 
             await _context.SportsDataIoPlayers.AddAsync(ioPlayer);
             await _context.SaveChangesAsync();
@@ -119,7 +119,7 @@ public sealed class SportsDataIoPlayersWorker : BackgroundService
             {
                 player.PlayerTeam = null;
             }
-
+            ioPlayer.LastUpdated = DateTime.Now.ToLocalTime();
             await _context.SaveChangesAsync();
 
             await AddSportsDataIOPlayerToRedisOM(ioPlayer);
@@ -164,6 +164,7 @@ public sealed class SportsDataIoPlayersWorker : BackgroundService
         {
             // So, maybe we can find the player by name, and update them that way?
             ioPlayer.Name = FixedPlayer(ioPlayer.Name);
+            _logger.LogInformation($"Looking for {ioPlayer.Name} in the database.");
             existingPlayer = players.Where(p => p.FullName == ioPlayer.Name).FirstOrDefault();
 
             if(existingPlayer != null)

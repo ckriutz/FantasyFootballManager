@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using FantasyFootballManager.DataService.Models;
 
 using Redis.OM.Contracts;
+using Redis.OM;
 
 namespace FantasyFootballManager.DataService;
 
@@ -46,6 +47,7 @@ public sealed class FantasyProsPlayerWorker : BackgroundService
                 client.DefaultRequestHeaders.Accept.Clear();
                 client.DefaultRequestHeaders.Add("x-api-key", Environment.GetEnvironmentVariable("fantasyProsXApiKey"));
                 jsonString = await client.GetStringAsync("https://api.fantasypros.com/public/v2/json/nfl/2024/consensus-rankings?position=ALL&week=0");
+
             }
             catch (Exception ex)
             {
@@ -92,6 +94,7 @@ public sealed class FantasyProsPlayerWorker : BackgroundService
             // player already exists, so lets update it.
             existingPlayer.PlayerName = prosPlayer.PlayerName;
             existingPlayer.SportsdataId = prosPlayer.SportsdataId;
+            existingPlayer.LastUpdated = DateTime.Now.ToLocalTime();
 
             // Okay, do players who are 'Inactive' probably don't have a team, so we need to see if it's null first.
             if (!String.IsNullOrEmpty(prosPlayer.PlayerTeamId))
@@ -130,7 +133,7 @@ public sealed class FantasyProsPlayerWorker : BackgroundService
             existingPlayer.RankStd = prosPlayer.RankStd;
             existingPlayer.PosRank = prosPlayer.PosRank;
             existingPlayer.Tier = prosPlayer.Tier;
-            existingPlayer.LastUpdated = DateTime.Now;
+            existingPlayer.LastUpdated = DateTime.Now.ToLocalTime();
 
             try
             {
@@ -194,7 +197,7 @@ public sealed class FantasyProsPlayerWorker : BackgroundService
         var existingPlayer = players.Where(p => p.SportRadarId == player.SportsdataId).FirstOrDefault();
         if(existingPlayer != null)
         {
-            _logger.LogInformation($"Found existing player in Redis by it's Key! Updating.");
+            _logger.LogInformation($"Found {player.PlayerName} in Redis by it's Key! Updating.");
             existingPlayer.UpdatePlayerWithProsData(player);
             await players.UpdateAsync(existingPlayer);
         }

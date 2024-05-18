@@ -30,6 +30,8 @@ public sealed class SleeperPlayersWorker : BackgroundService
                 return;
             }
 
+            //await CleanUpDatabase();
+
             var lastUpdate = await GetLastUpdatedTime();
             if (lastUpdate.AddDays(1) > DateTime.Now)
             {
@@ -77,8 +79,33 @@ public sealed class SleeperPlayersWorker : BackgroundService
         }
     }
 
+    private async Task CleanUpDatabase()
+    {
+        // So we need to go though all the players in the database, and see if their Full Name is "Duplicate Player".
+        // If it is, we need to remove it from both SQL AND Redis.
+        var redisPlayers = _connectionProvider.RedisCollection<Models.FantasyPlayer>();
+        var players = await _context.SleeperPlayers.Where(p => p.FullName == "Duplicate Player").ToListAsync();
+        foreach (var player in players)
+        {
+            _logger.LogInformation($"Removing player: {player.PlayerId}");
+            _context.SleeperPlayers.Remove(player);
+            await _context.SaveChangesAsync();
+            var redisPlayer = redisPlayers.Where(p => p.SleeperId == player.PlayerId).FirstOrDefault();
+            if (redisPlayer != null)
+            {
+                await redisPlayers.DeleteAsync(redisPlayer);
+            }
+        }
+    }
     private async Task<Models.SleeperPlayer> AddPlayerToDatabaseAsync(Models.SleeperPlayer sleeperPlayer)
     {
+        // So there can be some players named "Duplicate Player".
+        // We need to skip those.
+        if (sleeperPlayer.FullName == "Duplicate Player")
+        {
+            return null;
+        }
+
         // Does the player already exist?
         var existingPlayer = await _context.SleeperPlayers.Include("Team").FirstOrDefaultAsync(p => p.PlayerId == sleeperPlayer.PlayerId);
         if (existingPlayer != null)

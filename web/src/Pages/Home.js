@@ -9,7 +9,7 @@ export default function Home()
     const [data, setData] = useState(null);
     useEffect(() => {
         fetch(process.env.REACT_APP_API_URL + "/datastatus")
-        .then((response) => response.json())
+        .then(response => response.json())
         .then((data) => setData(data)).catch((error) => console.log(error));
     }, []);
 

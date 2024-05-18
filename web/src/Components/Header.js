@@ -4,7 +4,7 @@ import ShowApiHealth from './ShowApiHealth';
 export default function Navbar()
 {
     const [health, setHealth] = useState(false);
-    fetch(process.env.REACT_APP_API_URL +'/Health').then(response => {
+    fetch(process.env.REACT_APP_API_URL +'/health').then(response => {
         if (response.ok) {
             setHealth(true);
         } else {

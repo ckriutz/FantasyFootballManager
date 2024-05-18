@@ -23,7 +23,7 @@ builder.Services.AddHostedService<FantasyFootballManager.DataService.FantasyPros
 builder.Services.AddSingleton<IRedisConnectionProvider>(new RedisConnectionProvider(redisOmConnectionString));
 builder.Services.AddLogging(configure => configure.AddConsole());
 
-var provider = new Redis.OM.RedisConnectionProvider(redisOmConnectionString);
+var provider = new RedisConnectionProvider(redisOmConnectionString);
 provider.Connection.CreateIndex(typeof(FantasyFootballManager.DataService.Models.FantasyPlayer));
 
 IHost host = builder.Build();
