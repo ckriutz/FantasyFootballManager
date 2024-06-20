@@ -30,10 +30,5 @@ spec:
             configMapKeyRef:
               name: fantasy-football-config
               key: redisOMConnectionString
-        - name: REACT_APP_API_URL
-          valueFrom:
-            configMapKeyRef:
-              name: fantasy-football-config
-              key: REACT_APP_API_URL
         ports:
         - containerPort: 8080
