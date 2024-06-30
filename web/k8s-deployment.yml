@@ -18,16 +18,6 @@ spec:
         image: ghcr.io/ckriutz/fantasyfootballmanager:web-latest
         imagePullPolicy: Always
         env:
-        - name: sqlConnectionString
-          valueFrom:
-            configMapKeyRef:
-              name: fantasy-football-config
-              key: sqlConnectionString
-        - name: redisConnectionString
-          valueFrom:
-            configMapKeyRef:
-              name: fantasy-football-config
-              key: redisConnectionString
         - name: REACT_APP_API_URL
           valueFrom:
             configMapKeyRef:
