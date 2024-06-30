@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
       - name: fantasyfootballmanager
-        image: ghcr.io/ckriutz/fantasyfootballmanager:web-latest
+        image: ghcr.io/ckriutz/fantasyfootballmanager-web:latest
         imagePullPolicy: Always
         env:
         - name: REACT_APP_API_URL
