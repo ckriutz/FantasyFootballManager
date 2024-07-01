@@ -1,7 +1,6 @@
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.EntityFrameworkCore;
-using Redis.OM.Contracts;
 
 namespace FantasyFootballManager.DataService;
 
@@ -9,13 +8,11 @@ public sealed class SleeperPlayersWorker : BackgroundService
 {
     private readonly ILogger<SleeperPlayersWorker> _logger;
     private readonly Models.FantasyDbContext _context;
-    private readonly IRedisConnectionProvider _connectionProvider;
 
-   public SleeperPlayersWorker(ILogger<SleeperPlayersWorker> logger, Models.FantasyDbContext context, IRedisConnectionProvider connectionProvider)
+   public SleeperPlayersWorker(ILogger<SleeperPlayersWorker> logger, Models.FantasyDbContext context)
     {
         _logger = logger;
         _context = context;
-        _connectionProvider = connectionProvider;
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -83,18 +80,12 @@ public sealed class SleeperPlayersWorker : BackgroundService
     {
         // So we need to go though all the players in the database, and see if their Full Name is "Duplicate Player".
         // If it is, we need to remove it from both SQL AND Redis.
-        var redisPlayers = _connectionProvider.RedisCollection<Models.FantasyPlayer>();
         var players = await _context.SleeperPlayers.Where(p => p.FullName == "Duplicate Player").ToListAsync();
         foreach (var player in players)
         {
             _logger.LogInformation($"Removing player: {player.PlayerId}");
             _context.SleeperPlayers.Remove(player);
             await _context.SaveChangesAsync();
-            var redisPlayer = redisPlayers.Where(p => p.SleeperId == player.PlayerId).FirstOrDefault();
-            if (redisPlayer != null)
-            {
-                await redisPlayers.DeleteAsync(redisPlayer);
-            }
         }
     }
     private async Task<Models.SleeperPlayer> AddPlayerToDatabaseAsync(Models.SleeperPlayer sleeperPlayer)
@@ -152,9 +143,7 @@ public sealed class SleeperPlayersWorker : BackgroundService
 
             await _context.SaveChangesAsync();
 
-            // Lets publish this player into Redis.
-            await AddSleeperPlayerToRedisORM(sleeperPlayer);
-
+            await UpdateFantasyPlayersTable(existingPlayer);
 
             return existingPlayer;
         }
@@ -167,11 +156,30 @@ public sealed class SleeperPlayersWorker : BackgroundService
  
         _context.SleeperPlayers.Add(sleeperPlayer);
         await _context.SaveChangesAsync();
-        
-        // Lets publish this player into Redis.
-        await AddSleeperPlayerToRedisORM(sleeperPlayer);
+
+        await UpdateFantasyPlayersTable(sleeperPlayer);
 
         return sleeperPlayer;
+    }
+
+    private async Task UpdateFantasyPlayersTable(Models.SleeperPlayer sleeperPlayer)
+    {
+        var fantasyPlayer = await _context.FantasyPlayers.FirstOrDefaultAsync(f => f.PlayerId == sleeperPlayer.PlayerId);
+        if (fantasyPlayer == null)
+        {
+            _logger.LogInformation($"Adding new player to FantasyPlayers: {sleeperPlayer.SearchFullName}");
+            fantasyPlayer = new Models.FantasyPlayer()
+            {
+                PlayerId = sleeperPlayer.PlayerId,
+                IsThumbsUp = false,
+                IsThumbsDown = false,
+                IsTaken = false,
+                IsOnMyTeam = false,
+                LastUpdated = DateTime.Now
+            };
+            _context.FantasyPlayers.Add(fantasyPlayer);
+            await _context.SaveChangesAsync();
+        }
     }
 
     private async Task<DateTime> GetLastUpdatedTime()
@@ -180,38 +188,5 @@ public sealed class SleeperPlayersWorker : BackgroundService
         return ds.LastUpdated.ToLocalTime();
     }
 
-    private async Task AddSleeperPlayerToRedisORM(Models.SleeperPlayer player)
-    {
-        // In this case, I think we're going to insert every player, even the ones not worthy.
-        // The API can filter those out if we want.
-        var players = _connectionProvider.RedisCollection<Models.FantasyPlayer>();
-        var existingPlayer = players.Where(p => p.SleeperId == player.PlayerId).FirstOrDefault();
-        if(existingPlayer != null)
-        {
-            // There is an existing player in Redis. Lets update it.
-            _logger.LogInformation($"Player {player.FullName} - {player.PlayerId} is in Redis. Updating.");
-            existingPlayer.UpdatePlayerWithSleeperData(player);
-            if (!String.IsNullOrEmpty(player.TeamAbbreviation))
-            {
-                // Okay, so we have one, we just need update the player with this.
-                // Both the Team Name, and the Team ID.
-                existingPlayer.TeamName = _context.Teams.FirstOrDefault(t => t.Abbreviation == player.TeamAbbreviation)?.Name;
-                existingPlayer.TeamId = _context.Teams.FirstOrDefault(t => t.Abbreviation == player.TeamAbbreviation)?.Id;
-            }
-            await players.UpdateAsync(existingPlayer);
-        }
-        else
-        {
-            // This is a new player. Lets add it.
-            _logger.LogInformation($"Player {player.FullName} - {player.PlayerId} is not in Redis. Adding.");
-            Models.FantasyPlayer fantasyPlayer = new Models.FantasyPlayer();
-            if (!String.IsNullOrEmpty(player.TeamAbbreviation))
-            {
-                fantasyPlayer.TeamName = _context.Teams.FirstOrDefault(t => t.Id == player.Team.Id)?.Name;
-                fantasyPlayer.TeamId = _context.Teams.FirstOrDefault(t => t.Abbreviation == player.TeamAbbreviation)?.Id;
-            }
-            fantasyPlayer.UpdatePlayerWithSleeperData(player);
-            await players.InsertAsync(fantasyPlayer);
-        }
-    }
+    
 }

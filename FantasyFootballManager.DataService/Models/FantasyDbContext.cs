@@ -10,8 +10,9 @@ public class FantasyDbContext : DbContext
     public DbSet<SportsDataIoPlayer> SportsDataIoPlayers { get; set; }
     public DbSet<Team> Teams { get; set; }
     public DbSet<DataStatus> DataStatus { get; set; }
+    public DbSet<FantasyPlayer> FantasyPlayers { get; set; }
 
-    //public FantasyDbContext() { }
+    public FantasyDbContext() { }
         
     public FantasyDbContext(DbContextOptions<FantasyDbContext> dbContextOptions) : base(dbContextOptions) { }
 

@@ -2,22 +2,17 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
-using Redis.OM.Contracts;
-
 namespace FantasyFootballManager.DataService;
 
 public sealed class SportsDataIoPlayersWorker : BackgroundService
 {
     private readonly ILogger<SportsDataIoPlayersWorker> _logger;
     private readonly Models.FantasyDbContext _context;
-    private readonly IRedisConnectionProvider _connectionProvider;
 
-   public SportsDataIoPlayersWorker(ILogger<SportsDataIoPlayersWorker> logger, Models.FantasyDbContext context, IRedisConnectionProvider connectionProvider)
+   public SportsDataIoPlayersWorker(ILogger<SportsDataIoPlayersWorker> logger, Models.FantasyDbContext context)
     {
         _logger = logger;
         _context = context;
-
-        _connectionProvider = connectionProvider;
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -88,8 +83,6 @@ public sealed class SportsDataIoPlayersWorker : BackgroundService
             await _context.SportsDataIoPlayers.AddAsync(ioPlayer);
             await _context.SaveChangesAsync();
 
-            await AddSportsDataIOPlayerToRedisOM(ioPlayer);
-
             return ioPlayer;
         }
         else
@@ -122,7 +115,6 @@ public sealed class SportsDataIoPlayersWorker : BackgroundService
             ioPlayer.LastUpdated = DateTime.Now.ToLocalTime();
             await _context.SaveChangesAsync();
 
-            await AddSportsDataIOPlayerToRedisOM(ioPlayer);
             return player;
         }
     }
@@ -148,35 +140,5 @@ public sealed class SportsDataIoPlayersWorker : BackgroundService
             return "Mecole Hardman";
         }
         return playerName;
-    }
-
-    private async Task AddSportsDataIOPlayerToRedisOM(Models.SportsDataIoPlayer ioPlayer)
-    {
-        var players = _connectionProvider.RedisCollection<Models.FantasyPlayer>();
-        var existingPlayer = players.Where(p => p.SportsDataIoKey == ioPlayer.FantasyPlayerKey).FirstOrDefault();
-        if(existingPlayer != null)
-        {
-            // Okay, we found the player, so we need to update the player.
-            existingPlayer.UpdatePlayerWithIoData(ioPlayer);
-            players.Update(existingPlayer);
-        }
-        else
-        {
-            // So, maybe we can find the player by name, and update them that way?
-            ioPlayer.Name = FixedPlayer(ioPlayer.Name);
-            _logger.LogInformation($"Looking for {ioPlayer.Name} in the database.");
-            existingPlayer = players.Where(p => p.FullName == ioPlayer.Name).FirstOrDefault();
-
-            if(existingPlayer != null)
-            {
-                // Okay, we found the player, so we need to update the player.
-                existingPlayer.UpdatePlayerWithIoData(ioPlayer);
-                players.Update(existingPlayer);
-            }
-            else
-            {
-                _logger.LogWarning($"We didn't find {ioPlayer.Name} in the database, so we're going to skip.");
-            }
-        }
     }
 }

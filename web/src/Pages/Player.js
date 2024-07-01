@@ -21,21 +21,13 @@ export default function Players()
 {
     const { id } = useParams();
 
-    const url = process.env.REACT_APP_API_URL + "/fantasyplayer/" + id;
-
     const [data, setData] = useState(null);
     useEffect(() => {
         fetch(process.env.REACT_APP_API_URL + "/fantasyplayer/" + id)
         .then((response) => response.json())
-        .then((data) => setData(data));
+        .then((data) => setData(data))
+        .then(() => console.log(data));
     }, [])
-
-    //const updateData = (playerItem) => {
-    //    const updatedData = { ...data }
-    //    updatedData = playerItem;
-    //    setData(updatedData);
-    //};
-
 
     function onClickThumbsUp(e) {
         e.preventDefault();
@@ -115,7 +107,7 @@ export default function Players()
     function releasePlayer(e) {
         console.log("Resetting player " + data.fullName + "...");
         e.preventDefault();
-        fetch(process.env.REACT_APP_API_URL + '/fantasyplayer/release/' + data.sleeperId, {
+        fetch(process.env.REACT_APP_API_URL + '/fantasyplayer/reset/' + data.sleeperId, {
             method: 'POST'
         });
 

@@ -2,10 +2,6 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
-using FantasyFootballManager.DataService.Models;
-
-using Redis.OM.Contracts;
-using Redis.OM;
 
 namespace FantasyFootballManager.DataService;
 
@@ -13,13 +9,11 @@ public sealed class FantasyProsPlayerWorker : BackgroundService
 {
     private readonly ILogger<FantasyProsPlayerWorker> _logger;
     private readonly Models.FantasyDbContext _context;
-    private readonly IRedisConnectionProvider _connectionProvider;
 
-   public FantasyProsPlayerWorker(ILogger<FantasyProsPlayerWorker> logger, Models.FantasyDbContext context, IRedisConnectionProvider redisConnectionProvider)
+   public FantasyProsPlayerWorker(ILogger<FantasyProsPlayerWorker> logger, Models.FantasyDbContext context)
     {
         _logger = logger;
         _context = context;
-        _connectionProvider = redisConnectionProvider;
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -138,16 +132,12 @@ public sealed class FantasyProsPlayerWorker : BackgroundService
             try
             {
                 await _context.SaveChangesAsync();
-
-                await AddFantasyProsPlayerToRedisOM(prosPlayer);
             }
             catch (Exception ex)
             {
                 _logger.LogError($"Error updating player {prosPlayer.PlayerName} in database. {ex.Message}");
-            
             }
            
-            
             return existingPlayer;
             
         }
@@ -178,8 +168,6 @@ public sealed class FantasyProsPlayerWorker : BackgroundService
                 _logger.LogError($"Error adding player {prosPlayer.PlayerName} to database. {ex.Message}");
             }
 
-            await AddFantasyProsPlayerToRedisOM(prosPlayer);
-
             return prosPlayer;
         }
     
@@ -190,53 +178,5 @@ public sealed class FantasyProsPlayerWorker : BackgroundService
         var ds = await _context.DataStatus.FirstOrDefaultAsync(d => d.DataSource == "FantasyPros");
         return ds.LastUpdated.ToLocalTime();
     }
-
-    private async Task AddFantasyProsPlayerToRedisOM(FantasyProsPlayer player)
-    {
-        var players = _connectionProvider.RedisCollection<Models.FantasyPlayer>();
-        var existingPlayer = players.Where(p => p.SportRadarId == player.SportsdataId).FirstOrDefault();
-        if(existingPlayer != null)
-        {
-            _logger.LogInformation($"Found {player.PlayerName} in Redis by it's Key! Updating.");
-            existingPlayer.UpdatePlayerWithProsData(player);
-            await players.UpdateAsync(existingPlayer);
-        }
-        else
-        {
-            //Lets try by YahooId
-            if(player.PlayerYahooId != null)
-            {   
-                Console.WriteLine($"Trying to find player {player.PlayerName} by YahooId: {player.PlayerYahooId}");
-                int yahooIdInt = 0;
-                if (Int32.TryParse(player.PlayerYahooId, out yahooIdInt) == true)
-                {
-                    existingPlayer = players.Where(p => p.YahooId == yahooIdInt).FirstOrDefault();
-                    if (existingPlayer != null)
-                    {
-                        _logger.LogInformation($"Found existing player in Redis by it's YahooId! Updating.");
-                        existingPlayer.UpdatePlayerWithProsData(player);
-                        await players.UpdateAsync(existingPlayer);
-                    }
-                }
-            }
-
-            //Ugh, lets try by name.
-            if(existingPlayer == null)
-            {
-                existingPlayer = players.Where(p => p.FullName == player.PlayerName).FirstOrDefault();
-                if (existingPlayer != null)
-                {
-                    _logger.LogInformation($"Found existing player in Redis by it's Name! Updating.");
-                    existingPlayer.UpdatePlayerWithProsData(player);
-                    await players.UpdateAsync(existingPlayer);
-                }
-                else
-                {
-                    _logger.LogWarning($"Could not find player {player.PlayerName} in Redis, giving up.");
-                }
-            }
-        }
-    }
-
 
 }

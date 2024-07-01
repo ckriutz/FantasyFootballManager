@@ -32,7 +32,6 @@ export default function Players()
 
     function HandleLosers(e) {
         setIncludeLosers(!includeLosers);
-
     }
 
     const updateData = (playerItem) => {

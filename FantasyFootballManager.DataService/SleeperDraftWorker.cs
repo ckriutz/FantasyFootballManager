@@ -3,23 +3,19 @@ using Microsoft.Extensions.Logging;
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 
-using Redis.OM.Contracts;
-
 namespace FantasyFootballManager.DataService;
 
 public sealed class SleeperDraftWorker : BackgroundService
 {
     private readonly ILogger<SleeperDraftWorker> _logger;
     private readonly Models.FantasyDbContext _context;
-    private readonly IRedisConnectionProvider _connectionProvider;
 
     private readonly string mySleeperUserId = Environment.GetEnvironmentVariable("mySleeperId");
     private readonly string sleeperLeaugeId = Environment.GetEnvironmentVariable("leagueId");
-   public SleeperDraftWorker(ILogger<SleeperDraftWorker> logger, Models.FantasyDbContext context, IRedisConnectionProvider connectionProvider)
+   public SleeperDraftWorker(ILogger<SleeperDraftWorker> logger, Models.FantasyDbContext context)
     {
         _logger = logger;
         _context = context;
-        _connectionProvider = connectionProvider;
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -73,17 +69,16 @@ public sealed class SleeperDraftWorker : BackgroundService
 
                 try
                 {
-                    // Lets look up the player in Redis.
-                    var players = _connectionProvider.RedisCollection<Models.FantasyPlayer>();
-                    var existingPlayer = players.Where(p => p.SleeperId == player.PlayerId).FirstOrDefault();
-                    if(existingPlayer != null)
+                    // Lets look up the player in the FantasyPlayer table.
+                    var fPlayer = _context.FantasyPlayers.FirstOrDefault(p => p.PlayerId == player.PlayerId);
+                    if(fPlayer != null)
                     {
-                        _logger.LogInformation($"Player {player.PlayerId} is in Redis. Updating.");
-                        existingPlayer.PickedBy = player.PickedBy;
-                        existingPlayer.PickNumber = player.PickNo;
-                        existingPlayer.PickRound = player.Round;
+                        _logger.LogInformation($"Updating status of {player.PlayerId}");
+                        fPlayer.PickedBy = player.PickedBy;
+                        fPlayer.PickNumber = player.PickNo;
+                        fPlayer.PickRound = player.Round;
 
-                         // Now we set the IsOnMyTeam flag.
+                        // Now we set the IsOnMyTeam flag.
                         if(player.PickedBy == mySleeperUserId)
                         {
                             fantasyPlayer.IsOnMyTeam = true;
@@ -95,13 +90,12 @@ public sealed class SleeperDraftWorker : BackgroundService
                             fantasyPlayer.IsTaken = true;
                         }
 
-                        await players.UpdateAsync(existingPlayer);
-                        _logger.LogInformation($"Player {fantasyPlayer.FullName} was updated with draft information.");
+                        await _context.SaveChangesAsync();
                     }
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError(ex, $"Something shit the bed trying to work with {player.PlayerId} in Redis");
+                    _logger.LogError(ex, $"Something shit the bed trying to work with {player.PlayerId} in the database");
                 }
 
             }
