@@ -1,6 +1,6 @@
 export default function DropdownDivider()
 {
     return (
-        <div class="dropdown-divider"></div>
+        <div className="dropdown-divider"></div>
     );
 }

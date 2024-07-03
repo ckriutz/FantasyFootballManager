@@ -5,9 +5,9 @@ export default function ShowApiHealth(props)
     if(props.Health == true)
     {
         return (
-            <div class="col-6 col-sm-4 col-md-2 col-xl-auto py-3">
-                <a href="#" class="btn w-100">
-                    <Heartbeat class="text-success" /> Healthy
+            <div className="col-6 col-sm-4 col-md-2 col-xl-auto py-3">
+                <a href="#" className="btn w-100">
+                    <Heartbeat className="text-success" /> Healthy
                 </a>
           </div>
 
@@ -15,9 +15,9 @@ export default function ShowApiHealth(props)
     }
     else {
         return (
-            <div class="col-6 col-sm-4 col-md-2 col-xl-auto py-3">
-                <a href="#" class="btn w-100">
-                    <Heartbeat class="text-danger" /> Unhealthy
+            <div className="col-6 col-sm-4 col-md-2 col-xl-auto py-3">
+                <a href="#" className="btn w-100">
+                    <Heartbeat className="text-danger" /> Unhealthy
                 </a>
             </div>
         )

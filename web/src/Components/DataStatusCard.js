@@ -3,12 +3,12 @@ import { formatDistanceToNowStrict } from 'date-fns';
 export default function DataStatusCard(props)
 {
     return (
-        <div class="card">
-            <div class="card-body">
-                <div class="row align-items-center">
-                    <div class="col-auto">
-                        <span class="bg-blue text-white avatar">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-timeline-event" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+        <div className="card">
+            <div className="card-body">
+                <div className="row align-items-center">
+                    <div className="col-auto">
+                        <span className="bg-blue text-white avatar">
+                            <svg xmlns="http://www.w3.org/2000/svg" className="icon icon-tabler icon-tabler-timeline-event" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
                             <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
                             <path d="M12 20m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0"></path>
                             <path d="M10 20h-6"></path>
@@ -17,11 +17,11 @@ export default function DataStatusCard(props)
                             </svg>
                         </span>
                     </div>
-                    <div class="col">
+                    <div className="col">
                       <h3>{props.dataSource}</h3>
-                      <div class="text-secondary">Updated {formatDistanceToNowStrict(new Date(props.lastUpdated))} ago</div>
+                      <div className="text-secondary">Updated {formatDistanceToNowStrict(new Date(props.lastUpdated))} ago</div>
                     </div>
-                    <div class="col-auto"></div>
+                    <div className="col-auto"></div>
                 </div>
             </div>
         </div>

@@ -15,40 +15,46 @@ import {ReactComponent as CurrencyDollar} from '../Components/Icons/CurrencyDoll
 import {ReactComponent as ListNumbers} from '../Components/Icons/ListNumbers.svg'
 import {ReactComponent as Trophy} from '../Components/Icons/Trophy.svg'
 
-import Teams from '../Components/teams.json';
-
 export default function Players()
 {
     const { id } = useParams();
-
     const [data, setData] = useState(null);
+
     useEffect(() => {
         fetch(process.env.REACT_APP_API_URL + "/fantasyplayer/" + id)
-        .then((response) => response.json())
+        .then((response) => {
+            if (response.ok) {
+                return response.json();
+            }
+        })
         .then((data) => setData(data))
-        .then(() => console.log(data));
     }, [])
+
+    if(data != null) { console.log(data); }
 
     function onClickThumbsUp(e) {
         e.preventDefault();
         
-        fetch(process.env.REACT_APP_API_URL + '/fantasyplayer/thumbsup/' + data.sleeperId, {
-            method: 'POST'
-        });
-
-        if(data.isThumbsUp)
+        if(data.fantasy.isThumbsUp)
         {
-            console.log("Setting player " + data.fullName + "to nutral...");
-            data.isThumbsUp = false;
+            // Player is already liked, so we're unliking them
+            console.log("Setting player " + data.sleeper.fullName + " to nutral...");
+            fetch(process.env.REACT_APP_API_URL + '/fantasyplayer/nothumbs/' + data.sleeper.playerId, {
+                method: 'POST'
+            });
+            data.fantasy.isThumbsUp = false;
         }
         else
         {
-            console.log("Liking player " + data.fullName + "...");
-            data.isThumbsUp = true;
+            console.log("Liking player " + data.sleeper.fullName + "...");
+            fetch(process.env.REACT_APP_API_URL + '/fantasyplayer/thumbsup/' + data.sleeper.playerId, {
+                method: 'POST'
+            });
+            data.fantasy.isThumbsUp = true;
         }
 
         const updatedData = { ...data }
-        updatedData.isThumbsUp = data.isThumbsUp;
+        updatedData.fantasy.isThumbsUp = data.fantasy.isThumbsUp;
         setData(updatedData);
 
     }
@@ -57,189 +63,184 @@ export default function Players()
     {
         e.preventDefault();
         
-        fetch(process.env.REACT_APP_API_URL + '/fantasyplayer/thumbsdown/' + data.sleeperId, {
-            method: 'POST'
-        });
-
-        if(data.isThumbsDown)
+        if(data.fantasy.isThumbsDown)
         {
-            console.log("Setting player " + data.fullName + "to nutral...");
-            data.isThumbsDown = false;
+            // Player is already unliked, so we're setting them to nutral.
+            console.log("Setting player " + data.sleeper.fullName + " to nutral...");
+            fetch(process.env.REACT_APP_API_URL + '/fantasyplayer/nothumbs/' + data.sleeper.playerId, {
+                method: 'POST'
+            });
+            data.fantasy.isThumbsDown = false;
         }
         else
         {
-            console.log("Disliking player " + data.fullName + "...");
-            data.isThumbsDown = true;
+            console.log("Disliking player " + data.sleeper.fullName + "...");
+            fetch(process.env.REACT_APP_API_URL + '/fantasyplayer/thumbsdown/' + data.sleeper.playerId, {
+                method: 'POST'
+            });
+            data.fantasy.isThumbsDown = true;
         }
 
         const updatedData = { ...data }
-        updatedData.isThumbsDown = data.isThumbsDown;
+        updatedData.fantasy.isThumbsDown = data.fantasy.isThumbsDown;
         setData(updatedData);
     }
 
     function claimPlayer(e) {
-        console.log("Claiming player " + data.fullName + "...");
+        console.log("Claiming player " + data.sleeper.fullName + "...");
         e.preventDefault();
-        fetch(process.env.REACT_APP_API_URL + '/fantasyplayer/claim/' + data.sleeperId, {
+        fetch(process.env.REACT_APP_API_URL + '/fantasyplayer/claim/' + data.sleeper.playerId, {
             method: 'POST'
         });
 
         const updatedData = { ...data }
-        updatedData.isTaken = false;
-        updatedData.isOnMyTeam = true;
+        updatedData.fantasy.isTaken = false;
+        updatedData.fantasy.isOnMyTeam = true;
         setData(updatedData);
-
     }
 
     function assignPlayer(e) {       
-        console.log("Assigning player " + data.fullName + "...");
+        console.log("Assigning player " + data.sleeper.fullName + "...");
         e.preventDefault();
-        fetch(process.env.REACT_APP_API_URL + '/fantasyplayer/assign/' + data.sleeperId, {
+        fetch(process.env.REACT_APP_API_URL + '/fantasyplayer/assign/' + data.sleeper.playerId, {
             method: 'POST'
         });
 
         const updatedData = { ...data }
-        updatedData.isTaken = true;
-        updatedData.isOnMyTeam = false;
+        updatedData.fantasy.isTaken = true;
+        updatedData.fantasy.isOnMyTeam = false;
         setData(updatedData);
     }
     
     function releasePlayer(e) {
-        console.log("Resetting player " + data.fullName + "...");
+        console.log("Resetting player " + data.sleeper.fullName + "...");
         e.preventDefault();
-        fetch(process.env.REACT_APP_API_URL + '/fantasyplayer/reset/' + data.sleeperId, {
+        fetch(process.env.REACT_APP_API_URL + '/fantasyplayer/reset/' + data.sleeper.playerId, {
             method: 'POST'
         });
 
         const updatedData = { ...data }
-        updatedData.isTaken = false;
-        updatedData.isOnMyTeam = false;
+        updatedData.fantasy.isTaken = false;
+        updatedData.fantasy.isOnMyTeam = false;
         setData(updatedData);
-    }
-
-    function getTeamAbbr(teamId) {
-        if (teamId == null) return "";
-        var team = Teams.find(t=> t.Id === teamId);
-        return team.Name;
-
     }
 
     if (data != null) {
     return (
-        <div class="page">
+        <div className="page">
             <Header />
             <Navbar />
-            <div class="page-wrapper">
-                <div class="page-body">
-                    <div class="container-xl">
-                        <div class="card">
-                            <div class="row g-0">
-                                <div class="col-12 col-md-9 d-flex flex-column">
-                                    <div class="card-body">
-                                        <h2 class="mb-4">{data.fullName} <span class="badge bg-secondary">{data.position}</span></h2>
+            <div className="page-wrapper">
+                <div className="page-body">
+                    <div className="container-xl">
+                        <div className="card">
+                            <div className="row g-0">
+                                <div className="col-12 col-md-9 d-flex flex-column">
+                                    <div className="card-body">
+                                        <h2 className="mb-4">{data.sleeper.fullName} <span className="badge bg-secondary">{data.sleeper.position}</span></h2>
                                         
-                                        <div class="row align-items-center">
-                                            <div class="col-auto">
-                                                <span class="avatar avatar-xl" style={{backgroundImage: "url(" + data.playerImageUrl + ")"}}></span>
+                                        <div className="row align-items-center">
+                                            <div className="col-auto">
+                                                <span className="avatar avatar-xl" style={{backgroundImage: "url(" + data.pros.playerImageUrl + ")"}}></span>
                                             </div>
                                         </div>
-                                        <div class="row align-items-center mt-3">
-                                            <td class="text-end">
-                                                <div class="btn-list">
-                                                    <ThumbsUpButton isThumbsUp={data.isThumbsUp} onClickThumbsUp={onClickThumbsUp} />
-                                                    <ThumbsDownButton isThumbsDown={data.isThumbsDown} onClickThumbsDown={thumbsDown} />
-                                                    <ClaimPlayerButton isOnMyTeam={data.isOnMyTeam} isTaken={data.isTaken} claimPlayer={claimPlayer} />
-                                                    <ReleasePlayerButton isOnMyTeam={data.isOnMyTeam} isTaken={data.isTaken} releasePlayer={releasePlayer} />
-                                                    <AssignPlayerButton isOnMyTeam={data.isOnMyTeam} isTaken={data.isTaken} assignPlayer={assignPlayer} />
+                                        <div className="row align-items-center mt-3">
+                                            <td className="text-end">
+                                                <div className="btn-list">
+                                                    <ThumbsUpButton isThumbsUp={data.fantasy.isThumbsUp} onClickThumbsUp={onClickThumbsUp} />
+                                                    <ThumbsDownButton isThumbsDown={data.fantasy.isThumbsDown} onClickThumbsDown={thumbsDown} />
+                                                    <ClaimPlayerButton isOnMyTeam={data.fantasy.isOnMyTeam} isTaken={data.fantasy.isTaken} claimPlayer={claimPlayer} />
+                                                    <ReleasePlayerButton isOnMyTeam={data.fantasy.isOnMyTeam} isTaken={data.fantasy.isTaken} releasePlayer={releasePlayer} />
+                                                    <AssignPlayerButton isOnMyTeam={data.fantasy.isOnMyTeam} isTaken={data.fantasy.isTaken} assignPlayer={assignPlayer} />
                                                 </div>
                                             </td>
                                         </div>
                                         <h2 className="mt-4">Player Data</h2>
-                                        <div class="row g-3">
+                                        <div className="row g-3">
 
 
-                                            <div class="col-md-6 col-xl-4">
-                                                <div class="card card-sm">
-                                                    <div class="card-body">
-                                                        <div class="row align-items-center">
-                                                            <div class="col-auto">
-                                                                <span class="bg-red text-white avatar">
+                                            <div className="col-md-6 col-xl-4">
+                                                <div className="card card-sm">
+                                                    <div className="card-body">
+                                                        <div className="row align-items-center">
+                                                            <div className="col-auto">
+                                                                <span className="bg-red text-white avatar">
                                                                     <MoodSick />
                                                                 </span>
                                                             </div>
-                                                            <div class="col">
-                                                                <div class="font-weight-medium">{data.injuryStatus == null ? "Healthy" : data.injuryStatus}</div>
-                                                                <div class="text-secondary">{data.injuryBodyPart}</div>
+                                                            <div className="col">
+                                                                <div className="font-weight-medium">{data.sleeper.injuryStatus == null ? "Healthy" : data.sleeper.injuryStatus}</div>
+                                                                <div className="text-secondary">{data.sleeper.injuryBodyPart}</div>
                                                             </div>
-                                                            <div class="col-auto"></div>
+                                                            <div className="col-auto"></div>
                                                         </div>
                                                     </div>
                                                 </div>
                                             </div>
 
-                                            <div class="col-md-6 col-xl-4">
-                                                <div class="card card-sm">
-                                                    <div class="card-body">
-                                                        <div class="row align-items-center">
-                                                            <div class="col-auto">
-                                                                <span class="bg-orange text-white avatar">ADP</span>
+                                            <div className="col-md-6 col-xl-4">
+                                                <div className="card card-sm">
+                                                    <div className="card-body">
+                                                        <div className="row align-items-center">
+                                                            <div className="col-auto">
+                                                                <span className="bg-orange text-white avatar">ADP</span>
                                                             </div>
-                                                            <div class="col">
-                                                                <div class="font-weight-medium">{data.averageDraftPositionPPR}</div>
-                                                                <div class="text-secondary">Average Draft Position</div>
+                                                            <div className="col">
+                                                                <div className="font-weight-medium">{data.sportsdata.averageDraftPositionPPR}</div>
+                                                                <div className="text-secondary">Average Draft Position</div>
                                                             </div>
-                                                            <div class="col-auto"></div>
+                                                            <div className="col-auto"></div>
                                                         </div>
                                                     </div>
                                                 </div>
                                             </div>
 
-                                            <div class="col-md-6 col-xl-4">
-                                                <div class="card card-sm">
-                                                    <div class="card-body">
-                                                        <div class="row align-items-center">
-                                                            <div class="col-auto">
-                                                                <span class="bg-green text-white avatar"><CurrencyDollar /></span>
+                                            <div className="col-md-6 col-xl-4">
+                                                <div className="card card-sm">
+                                                    <div className="card-body">
+                                                        <div className="row align-items-center">
+                                                            <div className="col-auto">
+                                                                <span className="bg-green text-white avatar"><CurrencyDollar /></span>
                                                             </div>
-                                                            <div class="col">
-                                                                <div class="font-weight-medium">{data.auctionValuePPR}</div>
-                                                                <div class="text-secondary">Aucton Value</div>
+                                                            <div className="col">
+                                                                <div className="font-weight-medium">{data.sportsdata.auctionValuePPR}</div>
+                                                                <div className="text-secondary">Aucton Value</div>
                                                             </div>
-                                                            <div class="col-auto"></div>
+                                                            <div className="col-auto"></div>
                                                         </div>
                                                     </div>
                                                 </div>
                                             </div>
 
-                                            <div class="col-md-6 col-xl-4">
-                                                <div class="card card-sm">
-                                                    <div class="card-body">
-                                                        <div class="row align-items-center">
-                                                            <div class="col-auto">
-                                                                <span class="bg-gray-500 text-dark avatar"><ListNumbers /></span>
+                                            <div className="col-md-6 col-xl-4">
+                                                <div className="card card-sm">
+                                                    <div className="card-body">
+                                                        <div className="row align-items-center">
+                                                            <div className="col-auto">
+                                                                <span className="bg-gray-500 text-dark avatar"><ListNumbers /></span>
                                                             </div>
-                                                            <div class="col">
-                                                                <div class="font-weight-medium">{data.rankEcr}</div>
-                                                                <div class="text-secondary">Rank (ECR)</div>
+                                                            <div className="col">
+                                                                <div className="font-weight-medium">{data.pros.rankEcr}</div>
+                                                                <div className="text-secondary">Rank (ECR)</div>
                                                             </div>
-                                                            <div class="col-auto"></div>
+                                                            <div className="col-auto"></div>
                                                         </div>
                                                     </div>
                                                 </div>
                                             </div>
 
-                                            <div class="col-md-6 col-xl-4">
-                                                <div class="card card-sm">
-                                                    <div class="card-body">
-                                                        <div class="row align-items-center">
-                                                            <div class="col-auto">
-                                                                <span class="bg-gray-500 text-dark avatar"><Trophy /></span>
+                                            <div className="col-md-6 col-xl-4">
+                                                <div className="card card-sm">
+                                                    <div className="card-body">
+                                                        <div className="row align-items-center">
+                                                            <div className="col-auto">
+                                                                <span className="bg-gray-500 text-dark avatar"><Trophy /></span>
                                                             </div>
-                                                            <div class="col">
-                                                                <div class="font-weight-medium">{data.tier}</div>
-                                                                <div class="text-secondary">Tier</div>
+                                                            <div className="col">
+                                                                <div className="font-weight-medium">{data.pros.tier}</div>
+                                                                <div className="text-secondary">Tier</div>
                                                             </div>
-                                                            <div class="col-auto"></div>
+                                                            <div className="col-auto"></div>
                                                         </div>
                                                     </div>
                                                 </div>
@@ -250,185 +251,181 @@ export default function Players()
                                 </div>
                             </div>
                         </div>
-                        <div class="card">
-                            <div class="card-header">
-                                <h3 class="card-title">Raw Player Data</h3>
+                        <div className="card">
+                            <div className="card-header">
+                                <h3 className="card-title">Raw Player Data</h3>
                             </div>
-                            <div class="card-body">
-                                <div class="datagrid">
-                                    <div class="datagrid-item">
-                                        <div class="datagrid-title">Position</div>
-                                        <div class="datagrid-content">{data.position}</div>
+                            <div className="card-body">
+                                <div className="datagrid">
+                                    <div className="datagrid-item">
+                                        <div className="datagrid-title">Position</div>
+                                        <div className="datagrid-content">{data.sleeper.position}</div>
                                     </div>
-                                    <div class="datagrid-item">
-                                        <div class="datagrid-title">Position Rank</div>
-                                        <div class="datagrid-content">{data.posRank}</div>
+                                    <div className="datagrid-item">
+                                        <div className="datagrid-title">Position Rank</div>
+                                        <div className="datagrid-content">{data.sleeper.posRank}</div>
                                     </div>
-                                    <div class="datagrid-item">
-                                        <div class="datagrid-title">Depth Chart Order</div>
-                                        <div class="datagrid-content">{data.depthChartOrder}</div>
+                                    <div className="datagrid-item">
+                                        <div className="datagrid-title">Depth Chart Order</div>
+                                        <div className="datagrid-content">{data.sleeper.depthChartOrder}</div>
                                     </div>
-                                    <div class="datagrid-item">
-                                        <div class="datagrid-title">Age</div>
-                                        <div class="datagrid-content">{data.age}</div>
+                                    <div className="datagrid-item">
+                                        <div className="datagrid-title">Age</div>
+                                        <div className="datagrid-content">{data.sleeper.age}</div>
                                     </div>
-                                    <div class="datagrid-item">
-                                        <div class="datagrid-title">Status</div>
-                                        <div class="datagrid-content">{data.status}</div>
+                                    <div className="datagrid-item">
+                                        <div className="datagrid-title">Status</div>
+                                        <div className="datagrid-content">{data.sleeper.status}</div>
                                     </div>
-                                    <div class="datagrid-item">
-                                        <div class="datagrid-title">Injury Status</div>
-                                        <div class="datagrid-content">{data.injuryStatus}</div>
+                                    <div className="datagrid-item">
+                                        <div className="datagrid-title">Injury Status</div>
+                                        <div className="datagrid-content">{data.sleeper.injuryStatus}</div>
                                     </div>
-                                    <div class="datagrid-item">
-                                        <div class="datagrid-title">Injury Body Part</div>
-                                        <div class="datagrid-content">{data.injuryBodyPart}</div>
+                                    <div className="datagrid-item">
+                                        <div className="datagrid-title">Injury Body Part</div>
+                                        <div className="datagrid-content">{data.sleeper.injuryBodyPart}</div>
                                     </div>
-                                    <div class="datagrid-item">
-                                        <div class="datagrid-title">Team Id</div>
-                                        <div class="datagrid-content">{data.teamId}</div>
+                                    <div className="datagrid-item">
+                                        <div className="datagrid-title">Team Name</div>
+                                        <div className="datagrid-content">{data.sleeper.team.name}</div>
                                     </div>
-                                    <div class="datagrid-item">
-                                        <div class="datagrid-title">Team Name</div>
-                                        <div class="datagrid-content">{getTeamAbbr(data.teamId)}</div>
+                                    <div className="datagrid-item">
+                                        <div className="datagrid-title">College</div>
+                                        <div className="datagrid-content">{data.sleeper.college}</div>
                                     </div>
-                                    <div class="datagrid-item">
-                                        <div class="datagrid-title">College</div>
-                                        <div class="datagrid-content">{data.college}</div>
+                                    <div className="datagrid-item">
+                                        <div className="datagrid-title">Search Rank</div>
+                                        <div className="datagrid-content">{data.sleeper.searchRank}</div>
                                     </div>
-                                    <div class="datagrid-item">
-                                        <div class="datagrid-title">Search Rank</div>
-                                        <div class="datagrid-content">{data.searchRank}</div>
+                                    <div className="datagrid-item">
+                                        <div className="datagrid-title">Average Draft Position</div>
+                                        <div className="datagrid-content">{data.sportsdata.averageDraftPosition}</div>
                                     </div>
-                                    <div class="datagrid-item">
-                                        <div class="datagrid-title">Average Draft Position</div>
-                                        <div class="datagrid-content">{data.averageDraftPosition}</div>
+                                    <div className="datagrid-item">
+                                        <div className="datagrid-title">Average Draft Position PPR</div>
+                                        <div className="datagrid-content">{data.sportsdata.averageDraftPositionPPR}</div>
                                     </div>
-                                    <div class="datagrid-item">
-                                        <div class="datagrid-title">Average Draft Position PPR</div>
-                                        <div class="datagrid-content">{data.averageDraftPositionPPR}</div>
+                                    <div className="datagrid-item">
+                                        <div className="datagrid-title">Average Draft Position IDP</div>
+                                        <div className="datagrid-content">{data.sportsdata.averageDraftPositionIDP}</div>
                                     </div>
-                                    <div class="datagrid-item">
-                                        <div class="datagrid-title">Average Draft Position IDP</div>
-                                        <div class="datagrid-content">{data.averageDraftPositionIDP}</div>
+                                    <div className="datagrid-item">
+                                        <div className="datagrid-title">Average Draft Position Rookie</div>
+                                        <div className="datagrid-content">{data.sportsdata.averageDraftPositionRookie}</div>
                                     </div>
-                                    <div class="datagrid-item">
-                                        <div class="datagrid-title">Average Draft Position Rookie</div>
-                                        <div class="datagrid-content">{data.averageDraftPositionRookie}</div>
+                                    <div className="datagrid-item">
+                                        <div className="datagrid-title">Average Draft Position Dynasty</div>
+                                        <div className="datagrid-content">{data.sportsdata.averageDraftPositionDynasty}</div>
                                     </div>
-                                    <div class="datagrid-item">
-                                        <div class="datagrid-title">Average Draft Position Dynasty</div>
-                                        <div class="datagrid-content">{data.averageDraftPositionDynasty}</div>
+                                    <div className="datagrid-item">
+                                        <div className="datagrid-title">Average Draft Position 2QB</div>
+                                        <div className="datagrid-content">{data.sportsdata.averageDraftPosition2QB}</div>
                                     </div>
-                                    <div class="datagrid-item">
-                                        <div class="datagrid-title">Average Draft Position 2QB</div>
-                                        <div class="datagrid-content">{data.averageDraftPosition2QB}</div>
+                                    <div className="datagrid-item">
+                                        <div className="datagrid-title">Bye Week</div>
+                                        <div className="datagrid-content">{data.pros.playerByeWeek}</div>
                                     </div>
-                                    <div class="datagrid-item">
-                                        <div class="datagrid-title">Bye Week</div>
-                                        <div class="datagrid-content">{data.byeWeek}</div>
+                                    <div className="datagrid-item">
+                                        <div className="datagrid-title">Last Season Fantasy Points</div>
+                                        <div className="datagrid-content">{data.sportsdata.lastSeasonFantasyPoints}</div>
                                     </div>
-                                    <div class="datagrid-item">
-                                        <div class="datagrid-title">Last Season Fantasy Points</div>
-                                        <div class="datagrid-content">{data.lastSeasonFantasyPoints}</div>
+                                    <div className="datagrid-item">
+                                        <div className="datagrid-title">Projected Fantasy Points</div>
+                                        <div className="datagrid-content">{data.sportsdata.projectedFantasyPoints}</div>
                                     </div>
-                                    <div class="datagrid-item">
-                                        <div class="datagrid-title">Projected Fantasy Points</div>
-                                        <div class="datagrid-content">{data.projectedFantasyPoints}</div>
+                                    <div className="datagrid-item">
+                                        <div className="datagrid-title">Auction Value</div>
+                                        <div className="datagrid-content">${data.sportsdata.auctionValue}</div>
                                     </div>
-                                    <div class="datagrid-item">
-                                        <div class="datagrid-title">Auction Value</div>
-                                        <div class="datagrid-content">{data.auctionValue}</div>
+                                    <div className="datagrid-item">
+                                        <div className="datagrid-title">Auction Value PPR</div>
+                                        <div className="datagrid-content">{data.sportsdata.auctionValuePPR}</div>
                                     </div>
-                                    <div class="datagrid-item">
-                                        <div class="datagrid-title">Auction Value PPR</div>
-                                        <div class="datagrid-content">{data.auctionValuePPR}</div>
+                                    <div className="datagrid-item">
+                                        <div className="datagrid-title">Player Owned Average</div>
+                                        <div className="datagrid-content">{data.pros.playerOwnedAvg}</div>
                                     </div>
-                                    <div class="datagrid-item">
-                                        <div class="datagrid-title">Player Owned Average</div>
-                                        <div class="datagrid-content">{data.playerOwnedAvg}</div>
+                                    <div className="datagrid-item">
+                                        <div className="datagrid-title">Player Owned ESPN</div>
+                                        <div className="datagrid-content">{data.pros.playerOwnedEspn}</div>
                                     </div>
-                                    <div class="datagrid-item">
-                                        <div class="datagrid-title">Player Owned ESPN</div>
-                                        <div class="datagrid-content">{data.playerOwnedEspn}</div>
+                                    <div className="datagrid-item">
+                                        <div className="datagrid-title">Player Owned Yahoo</div>
+                                        <div className="datagrid-content">{data.pros.playerOwnedYahoo}</div>
                                     </div>
-                                    <div class="datagrid-item">
-                                        <div class="datagrid-title">Player Owned Yahoo</div>
-                                        <div class="datagrid-content">{data.playerOwnedYahoo}</div>
+                                    <div className="datagrid-item">
+                                        <div className="datagrid-title">Rank ECR</div>
+                                        <div className="datagrid-content">{data.pros.rankEcr}</div>
                                     </div>
-                                    <div class="datagrid-item">
-                                        <div class="datagrid-title">Rank ECR</div>
-                                        <div class="datagrid-content">{data.rankEcr}</div>
+                                    <div className="datagrid-item">
+                                        <div className="datagrid-title">Rank Min</div>
+                                        <div className="datagrid-content">{data.pros.rankMin}</div>
                                     </div>
-                                    <div class="datagrid-item">
-                                        <div class="datagrid-title">Rank Min</div>
-                                        <div class="datagrid-content">{data.rankMin}</div>
+                                    <div className="datagrid-item">
+                                        <div className="datagrid-title">Rank Max</div>
+                                        <div className="datagrid-content">{data.pros.rankMax}</div>
                                     </div>
-                                    <div class="datagrid-item">
-                                        <div class="datagrid-title">Rank Max</div>
-                                        <div class="datagrid-content">{data.rankMax}</div>
+                                    <div className="datagrid-item">
+                                        <div className="datagrid-title">Rank Ave</div>
+                                        <div className="datagrid-content">{data.pros.rankAve}</div>
                                     </div>
-                                    <div class="datagrid-item">
-                                        <div class="datagrid-title">Rank Ave</div>
-                                        <div class="datagrid-content">{data.rankAve}</div>
+                                    <div className="datagrid-item">
+                                        <div className="datagrid-title">Rank Std</div>
+                                        <div className="datagrid-content">{data.pros.rankStd}</div>
                                     </div>
-                                    <div class="datagrid-item">
-                                        <div class="datagrid-title">Rank Std</div>
-                                        <div class="datagrid-content">{data.rankStd}</div>
-                                    </div>
-                                    <div class="datagrid-item">
-                                        <div class="datagrid-title">Tier</div>
-                                        <div class="datagrid-content">{data.tier}</div>
+                                    <div className="datagrid-item">
+                                        <div className="datagrid-title">Tier</div>
+                                        <div className="datagrid-content">{data.pros.tier}</div>
                                     </div>
                                 </div>
                             </div>
                         </div>
 
-                        <div class="card">
-                            <div class="card-header">
-                                <h3 class="card-title">API Data</h3>
+                        <div className="card">
+                            <div className="card-header">
+                                <h3 className="card-title">API Data</h3>
                             </div>
-                            <div class="card-body">
-                                <div class="datagrid">
-                                    <div class="datagrid-item">
-                                        <div class="datagrid-title">Sleeper Id</div>
-                                        <div class="datagrid-content">{data.sleeperId}</div>
+                            <div className="card-body">
+                                <div className="datagrid">
+                                    <div className="datagrid-item">
+                                        <div className="datagrid-title">Sleeper Id</div>
+                                        <div className="datagrid-content">{data.sleeper.playerId}</div>
                                     </div>
-                                    <div class="datagrid-item">
-                                        <div class="datagrid-title">SportRadar Id</div>
-                                        <div class="datagrid-content">{data.sportRadarId}</div>
+                                    <div className="datagrid-item">
+                                        <div className="datagrid-title">SportRadar Id</div>
+                                        <div className="datagrid-content">{data.sleeper.sportRadarId}</div>
                                     </div>
-                                    <div class="datagrid-item">
-                                        <div class="datagrid-title">Yahoo Id</div>
-                                        <div class="datagrid-content">{data.yahooId}</div>
+                                    <div className="datagrid-item">
+                                        <div className="datagrid-title">Yahoo Id</div>
+                                        <div className="datagrid-content">{data.sleeper.yahooId}</div>
                                     </div>
-                                    <div class="datagrid-item">
-                                        <div class="datagrid-title">SportsData.io Key</div>
-                                        <div class="datagrid-content">{data.sportsDataIoKey}</div>
+                                    <div className="datagrid-item">
+                                        <div className="datagrid-title">SportsData.io Key</div>
+                                        <div className="datagrid-content">{data.sportsdata.playerID}</div>
                                     </div>
-                                    <div class="datagrid-item">
-                                        <div class="datagrid-title">FantasyPros Player Id</div>
-                                        <div class="datagrid-content">{data.fantasyProsPlayerId}</div>
+                                    <div className="datagrid-item">
+                                        <div className="datagrid-title">FantasyPros Player Id</div>
+                                        <div className="datagrid-content">{data.pros.playerId}</div>
                                     </div>
 
-                                    <div class="datagrid-item">
-                                        <div class="datagrid-title">Last Updated Sleeper</div>
-                                        <div class="datagrid-content">
-                                            <ClockCog></ClockCog> {data.lastUpdatedSleeper}
+                                    <div className="datagrid-item">
+                                        <div className="datagrid-title">Last Updated Sleeper</div>
+                                        <div className="datagrid-content">
+                                            <ClockCog></ClockCog> {data.sleeper.lastUpdated}
                                         </div>
                                     </div>
 
-                                    <div class="datagrid-item">
-                                        <div class="datagrid-title">Last Updated SportsData.io</div>
-                                        <div class="datagrid-content">
-                                            <ClockCog></ClockCog> {data.lastUpdatedSportsDataIo}
+                                    <div className="datagrid-item">
+                                        <div className="datagrid-title">Last Updated SportsData.io</div>
+                                        <div className="datagrid-content">
+                                            <ClockCog></ClockCog> {data.sportsdata.lastUpdated}
                                         </div>
                                     </div>
 
-                                    <div class="datagrid-item">
-                                        <div class="datagrid-title">Last Updated FantasyPros</div>
-                                        <div class="datagrid-content">
-                                            <ClockCog></ClockCog> {data.lastUpdatedSportsDataIo}
+                                    <div className="datagrid-item">
+                                        <div className="datagrid-title">Last Updated FantasyPros</div>
+                                        <div className="datagrid-content">
+                                            <ClockCog></ClockCog> {data.pros.lastUpdated}
                                         </div>
                                     </div>
 
@@ -436,23 +433,23 @@ export default function Players()
                             </div>
                         </div>
 
-                        <div class="card">
-                            <div class="card-header">
-                                <h3 class="card-title">Draft Data</h3>
+                        <div className="card">
+                            <div className="card-header">
+                                <h3 className="card-title">Draft Data</h3>
                             </div>
-                            <div class="card-body">
-                                <div class="datagrid">
-                                    <div class="datagrid-item">
-                                        <div class="datagrid-title">Picked By</div>
-                                        <div class="datagrid-content">{data.pickedBy}</div>
+                            <div className="card-body">
+                                <div className="datagrid">
+                                    <div className="datagrid-item">
+                                        <div className="datagrid-title">Picked By</div>
+                                        <div className="datagrid-content">{data.fantasy.pickedBy}</div>
                                     </div>
-                                    <div class="datagrid-item">
-                                        <div class="datagrid-title">Pick Number</div>
-                                        <div class="datagrid-content">{data.pickNumber}</div>
+                                    <div className="datagrid-item">
+                                        <div className="datagrid-title">Pick Number</div>
+                                        <div className="datagrid-content">{data.fantasy.pickNumber}</div>
                                     </div>
-                                    <div class="datagrid-item">
-                                        <div class="datagrid-title">Pick Round</div>
-                                        <div class="datagrid-content">{data.pickRound}</div>
+                                    <div className="datagrid-item">
+                                        <div className="datagrid-title">Pick Round</div>
+                                        <div className="datagrid-content">{data.fantasy.pickRound}</div>
                                     </div>
                                 </div>
                             </div>
@@ -466,19 +463,19 @@ export default function Players()
     }
     else {
         return (
-            <div class="page">
-                <header class="navbar navbar-expand-sm navbar-light d-print-none">
-                    <div class="container-xl">
-                        <h1 class="navbar-brand navbar-brand-autodark d-none-navbar-horizontal pe-0 pe-md-3">🏈 Fantasy Football Manager</h1>
-                        <div class="navbar-nav flex-row order-md-last">
-                        <div class="nav-item d-none d-md-flex me-3">
-                            <div class="btn-list">
-                            <a href="https://github.com/tabler/tabler" class="btn" target="_blank" rel="noreferrer">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M9 19c-4.3 1.4 -4.3 -2.5 -6 -3m12 5v-3.5c0 -1 .1 -1.4 -.5 -2c2.8 -.3 5.5 -1.4 5.5 -6a4.6 4.6 0 0 0 -1.3 -3.2a4.2 4.2 0 0 0 -.1 -3.2s-1.1 -.3 -3.5 1.3a12.3 12.3 0 0 0 -6.2 0c-2.4 -1.6 -3.5 -1.3 -3.5 -1.3a4.2 4.2 0 0 0 -.1 3.2a4.6 4.6 0 0 0 -1.3 3.2c0 4.6 2.7 5.7 5.5 6c-.6 .6 -.6 1.2 -.5 2v3.5" /></svg>
+            <div className="page">
+                <header className="navbar navbar-expand-sm navbar-light d-print-none">
+                    <div className="container-xl">
+                        <h1 className="navbar-brand navbar-brand-autodark d-none-navbar-horizontal pe-0 pe-md-3">🏈 Fantasy Football Manager</h1>
+                        <div className="navbar-nav flex-row order-md-last">
+                        <div className="nav-item d-none d-md-flex me-3">
+                            <div className="btn-list">
+                            <a href="https://github.com/tabler/tabler" className="btn" target="_blank" rel="noreferrer">
+                                <svg xmlns="http://www.w3.org/2000/svg" className="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M9 19c-4.3 1.4 -4.3 -2.5 -6 -3m12 5v-3.5c0 -1 .1 -1.4 -.5 -2c2.8 -.3 5.5 -1.4 5.5 -6a4.6 4.6 0 0 0 -1.3 -3.2a4.2 4.2 0 0 0 -.1 -3.2s-1.1 -.3 -3.5 1.3a12.3 12.3 0 0 0 -6.2 0c-2.4 -1.6 -3.5 -1.3 -3.5 -1.3a4.2 4.2 0 0 0 -.1 3.2a4.6 4.6 0 0 0 -1.3 3.2c0 4.6 2.7 5.7 5.5 6c-.6 .6 -.6 1.2 -.5 2v3.5" /></svg>
                                 Source code
                             </a>
-                            <a href="https://github.com/sponsors/codecalm" class="btn" target="_blank" rel="noreferrer">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="icon text-pink" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M19.5 12.572l-7.5 7.428l-7.5 -7.428a5 5 0 1 1 7.5 -6.566a5 5 0 1 1 7.5 6.572" /></svg>
+                            <a href="https://github.com/sponsors/codecalm" className="btn" target="_blank" rel="noreferrer">
+                                <svg xmlns="http://www.w3.org/2000/svg" className="icon text-pink" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M19.5 12.572l-7.5 7.428l-7.5 -7.428a5 5 0 1 1 7.5 -6.566a5 5 0 1 1 7.5 6.572" /></svg>
                                 Sponsor
                             </a>
                             </div>
@@ -487,16 +484,16 @@ export default function Players()
                     </div>
                 </header>
                 <Navbar />
-                <div class="page-wrapper">
-                    <div class="page-body">
-                        <div class="container-xl d-flex flex-column justify-content-center">
-                            <div class="empty">
-                                <div class="empty-img"><img src="./static/illustrations/undraw_printing_invoices_5r4r.svg" height="128" alt="" /></div>
-                                <p class="empty-title">For some reason, no player was found.</p>
-                                <p class="empty-subtitle text-secondary">Try making sure shit isn't broken.</p>
-                                <div class="empty-action">
-                                    <a href="./." class="btn btn-primary">
-                                        <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M12 5l0 14" /><path d="M5 12l14 0" /></svg>
+                <div className="page-wrapper">
+                    <div className="page-body">
+                        <div className="container-xl d-flex flex-column justify-content-center">
+                            <div className="empty">
+                                <div className="empty-img"><img src="./static/illustrations/undraw_printing_invoices_5r4r.svg" height="128" alt="" /></div>
+                                <p className="empty-title">For some reason, no player was found.</p>
+                                <p className="empty-subtitle text-secondary">Try making sure shit isn't broken.</p>
+                                <div className="empty-action">
+                                    <a href="./." className="btn btn-primary">
+                                        <svg xmlns="http://www.w3.org/2000/svg" className="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M12 5l0 14" /><path d="M5 12l14 0" /></svg>
                                         Add your first client
                                     </a>
                                 </div>

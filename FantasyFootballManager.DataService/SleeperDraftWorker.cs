@@ -12,7 +12,7 @@ public sealed class SleeperDraftWorker : BackgroundService
 
     private readonly string mySleeperUserId = Environment.GetEnvironmentVariable("mySleeperId");
     private readonly string sleeperLeaugeId = Environment.GetEnvironmentVariable("leagueId");
-   public SleeperDraftWorker(ILogger<SleeperDraftWorker> logger, Models.FantasyDbContext context)
+    public SleeperDraftWorker(ILogger<SleeperDraftWorker> logger, Models.FantasyDbContext context)
     {
         _logger = logger;
         _context = context;

@@ -9,16 +9,20 @@ import DropdownDivider from '../Components/DropdownDivider';
 
 export default function Players()
 {
-
     const [data, setData] = useState(null);
     const [includeLosers, setIncludeLosers] = useState(false);
 
     useEffect(() => {
-        fetch(process.env.REACT_APP_API_URL + "/fantasyplayers")
-        .then((response) => response.json())
-        .then((data) => setData(data));
+        fetch(process.env.REACT_APP_API_URL + "/simplefantasyplayers")
+        .then(function(response) {
+            if (response.ok) {
+                return response.json();
+            }
+        })
+        .then((data) => setData(data))
     }, []);
 
+    if(data === undefined) return (<div>Loading...</div>);
 
     const filterLosers = (players) => {
         if(data == null) return;
@@ -35,6 +39,7 @@ export default function Players()
     }
 
     const updateData = (playerItem) => {
+        console.log(playerItem);
         const updatedData = data.map((item) => {
             if (item.sleeperId === playerItem.sleeperId) {
               return { ...item, player: playerItem };
@@ -45,14 +50,14 @@ export default function Players()
     };
 
     function addFilter(position) {
-        if (position == "ALL" || position == null) {
-            fetch(process.env.REACT_APP_API_URL + "/fantasyplayers")
+        if (position === "ALL" || position == null) {
+            fetch(process.env.REACT_APP_API_URL + "/simplefantasyplayers")
             .then((response) => response.json())
             .then((data) => setData(data));
             return;
         }
         else {
-            fetch(process.env.REACT_APP_API_URL + "/fantasyplayers/search/Position:" + position)
+            fetch(process.env.REACT_APP_API_URL + "/fantasyplayers/search/position/" + position)
             .then((response) => response.json())
             .then((data) => setData(data));
         }
@@ -60,19 +65,19 @@ export default function Players()
     };
 
     return (
-        <div class="page">
+        <div className="page">
             <Header />
             <Navbar />
-            <div class="page-wrapper">
-                <div class="page-body">
-                    <div class="container-xl">
-                        <div class="col-12">
-                            <div class="card">
-                                <div class="card-header">
-                                    <h3 class="card-title">Players <span class="badge bg-green">{data != null ? filterLosers(data).length : 0}</span></h3>
+            <div className="page-wrapper">
+                <div className="page-body">
+                    <div className="container-xl">
+                        <div className="col-12">
+                            <div className="card">
+                                <div className="card-header">
+                                    <h3 className="card-title">Players <span className="badge bg-green">{data != null ? data.length : 0}</span></h3>
                                 </div>
-                                <div class="card-body border-bottom py-3">
-                                    <div class="d-flex">
+                                <div className="card-body border-bottom py-3">
+                                    <div className="d-flex">
                                         <Dropdown dropdownName="Position">
                                             <DropdownItem title="ALL" addFilter={addFilter} />
                                             <DropdownDivider />
@@ -82,21 +87,21 @@ export default function Players()
                                             <DropdownItem title="TE" addFilter={addFilter} />
                                             <DropdownItem title="K" addFilter={addFilter} />
                                         </Dropdown>
-                                        <div class="mb-3 mt-2 px-3">
-                                            <div class="form-label">
-                                            <label class="form-check pl-3">
-                                                <input class="form-check-input" type="checkbox" checked={!includeLosers} onClick={HandleLosers} />
-                                                <span class="form-check-label">Remove Losers</span>
+                                        <div className="mb-3 mt-2 px-3">
+                                            <div className="form-label">
+                                            <label className="form-check pl-3">
+                                                {/*<input className="form-check-input" type="checkbox" checked={!includeLosers} onClick={HandleLosers} />
+                                                <span className="form-check-label">Remove Losers</span>*/}
                                             </label>
                                         </div>
                                         </div>
                                     </div>
                                 </div>
-                                <div class="table-responsive">
-                                    <table class="table card-table table-vcenter text-nowrap datatable">
+                                <div className="table-responsive">
+                                    <table className="table card-table table-vcenter text-nowrap datatable">
                                         <thead>
                                             <tr>
-                                                <th class="w-1">Sleeper Id</th>
+                                                <th className="w-1">Sleeper Id</th>
                                                 <th></th>
                                                 <th>Name</th>
                                                 <th>Position</th>
@@ -116,21 +121,6 @@ export default function Players()
                                             ))}
                                         </tbody>
                                     </table>
-                                </div>
-                                <div class="card-footer d-flex align-items-center">
-                                    <ul class="pagination m-0 ms-auto"> 
-                                        <li class="page-item"><a class="page-link" href="#">1</a></li>
-                                        <li class="page-item active"><a class="page-link" href="#">2</a></li>
-                                        <li class="page-item"><a class="page-link" href="#">3</a></li>
-                                        <li class="page-item"><a class="page-link" href="#">4</a></li>
-                                        <li class="page-item"><a class="page-link" href="#">5</a></li>
-                                        <li class="page-item">
-                                            <a class="page-link" href="#">
-                                                next
-                                                <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M9 6l6 6l-6 6" /></svg>
-                                            </a>
-                                        </li>
-                                    </ul>
                                 </div>
                             </div>
                         </div>

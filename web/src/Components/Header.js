@@ -13,12 +13,12 @@ export default function Navbar()
     }).catch(error => setHealth(false));
 
     return (
-        <header class="navbar navbar-expand-sm navbar-light d-print-none">
-            <div class="container-xl">
-                <h1 class="navbar-brand navbar-brand-autodark d-none-navbar-horizontal pe-0 pe-md-3">🏈 Fantasy Football Manager</h1>
-                <div class="navbar-nav flex-row order-md-last">
-                    <div class="nav-item d-none d-md-flex me-3">
-                        <div class="btn-list">
+        <header className="navbar navbar-expand-sm navbar-light d-print-none">
+            <div className="container-xl">
+                <h1 className="navbar-brand navbar-brand-autodark d-none-navbar-horizontal pe-0 pe-md-3">🏈 Fantasy Football Manager</h1>
+                <div className="navbar-nav flex-row order-md-last">
+                    <div className="nav-item d-none d-md-flex me-3">
+                        <div className="btn-list">
                             <ShowApiHealth Health={health}></ShowApiHealth>
                         </div>
                     </div>
