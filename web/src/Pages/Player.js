@@ -21,7 +21,11 @@ export default function Players()
     const [data, setData] = useState(null);
 
     useEffect(() => {
-        fetch(process.env.REACT_APP_API_URL + "/fantasyplayer/" + id)
+        fetch(process.env.REACT_APP_API_URL + "/fantasyplayer/" + id, {
+            headers: {
+                "Content-Type": "application/json",
+              },
+        })
         .then((response) => {
             if (response.ok) {
                 return response.json();

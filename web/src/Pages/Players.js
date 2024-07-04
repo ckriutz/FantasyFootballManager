@@ -13,7 +13,11 @@ export default function Players()
     const [includeLosers, setIncludeLosers] = useState(false);
 
     useEffect(() => {
-        fetch(process.env.REACT_APP_API_URL + "/simplefantasyplayers")
+        fetch(process.env.REACT_APP_API_URL + "/simplefantasyplayers", {
+            headers: {
+                "Content-Type": "application/json",
+              },
+        })
         .then(function(response) {
             if (response.ok) {
                 return response.json();

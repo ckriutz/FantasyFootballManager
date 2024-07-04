@@ -15,7 +15,11 @@ export default function Home()
 
     const [myPlayerData, setMyPLayerData] = useState(null);
     useEffect(() => {
-        fetch(process.env.REACT_APP_API_URL + "/myplayers")
+        fetch(process.env.REACT_APP_API_URL + "/myplayers", {
+            headers: {
+                "Content-Type": "application/json",
+              },
+        })
         .then((response) => response.json())
         .then((myPlayerData) => setMyPLayerData(myPlayerData)).catch((error) => console.log(error));
     }, []);
