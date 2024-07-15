@@ -14,6 +14,7 @@ import {ReactComponent as MoodSick} from '../Components/Icons/MoodSick.svg'
 import {ReactComponent as CurrencyDollar} from '../Components/Icons/CurrencyDollar.svg'
 import {ReactComponent as ListNumbers} from '../Components/Icons/ListNumbers.svg'
 import {ReactComponent as Trophy} from '../Components/Icons/Trophy.svg'
+import {ReactComponent as HeartCheck} from '../Components/Icons/HeartCheck.svg'
 
 export default function Players()
 {
@@ -139,7 +140,7 @@ export default function Players()
                     <div className="container-xl">
                         <div className="card">
                             <div className="row g-0">
-                                <div className="col-12 col-md-9 d-flex flex-column">
+                                <div className="col-12 col-md-12 d-flex flex-column">
                                     <div className="card-body">
                                         <h2 className="mb-4">{data.sleeper.fullName} <span className="badge bg-secondary">{data.sleeper.position}</span></h2>
                                         
@@ -160,17 +161,13 @@ export default function Players()
                                             </td>
                                         </div>
                                         <h2 className="mt-4">Player Data</h2>
-                                        <div className="row g-3">
-
-
-                                            <div className="col-md-6 col-xl-4">
+                                        <div className="row g-3 mb-3">
+                                            <div className="col">
                                                 <div className="card card-sm">
                                                     <div className="card-body">
                                                         <div className="row align-items-center">
                                                             <div className="col-auto">
-                                                                <span className="bg-red text-white avatar">
-                                                                    <MoodSick />
-                                                                </span>
+                                                                {data.sleeper.injuryStatus == null ? <span className="avatar text-success"><HeartCheck /></span> : <span className="avatar text-danger"><MoodSick /></span>}
                                                             </div>
                                                             <div className="col">
                                                                 <div className="font-weight-medium">{data.sleeper.injuryStatus == null ? "Healthy" : data.sleeper.injuryStatus}</div>
@@ -182,7 +179,7 @@ export default function Players()
                                                 </div>
                                             </div>
 
-                                            <div className="col-md-6 col-xl-4">
+                                            <div className="col">
                                                 <div className="card card-sm">
                                                     <div className="card-body">
                                                         <div className="row align-items-center">
@@ -199,7 +196,7 @@ export default function Players()
                                                 </div>
                                             </div>
 
-                                            <div className="col-md-6 col-xl-4">
+                                            <div className="col">
                                                 <div className="card card-sm">
                                                     <div className="card-body">
                                                         <div className="row align-items-center">
@@ -208,14 +205,15 @@ export default function Players()
                                                             </div>
                                                             <div className="col">
                                                                 <div className="font-weight-medium">{data.sportsdata.auctionValuePPR}</div>
-                                                                <div className="text-secondary">Aucton Value</div>
+                                                                <div className="text-secondary">Auction Value</div>
                                                             </div>
                                                             <div className="col-auto"></div>
                                                         </div>
                                                     </div>
                                                 </div>
                                             </div>
-
+                                        </div>
+                                        <div className="row g-3">
                                             <div className="col-md-6 col-xl-4">
                                                 <div className="card card-sm">
                                                     <div className="card-body">
@@ -291,7 +289,7 @@ export default function Players()
                                     </div>
                                     <div className="datagrid-item">
                                         <div className="datagrid-title">Team Name</div>
-                                        <div className="datagrid-content">{data.sleeper.team.name}</div>
+                                        <div className="datagrid-content">{data.sleeper.team == null ? "" : data.sleeper.team.teamName}</div>
                                     </div>
                                     <div className="datagrid-item">
                                         <div className="datagrid-title">College</div>

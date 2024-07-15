@@ -2,7 +2,6 @@ using System;
 using System.Linq;
 using FantasyFootballManager.DataService.Models;
 using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Mvc.Diagnostics;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -32,7 +31,7 @@ app.UseHttpsRedirection();
 
 // Enable CORS for everything
 app.UseCors(builder => builder
-    .AllowAnyOrigin()
+    .WithOrigins("http://localhost:3000", "http://ffootball.system-k.io/", "https://ffootball.system-k.io/")
     .AllowAnyMethod()
     .AllowAnyHeader());
 
