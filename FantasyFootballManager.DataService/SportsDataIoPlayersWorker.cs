@@ -61,7 +61,8 @@ public sealed class SportsDataIoPlayersWorker : BackgroundService
             // Okay, now that this is done, we need to add the updated date to the database.
             var ds = await _context.DataStatus.FirstOrDefaultAsync(d => d.DataSource == "SportsDataIO");
             ds.LastUpdated = DateTime.Now.ToLocalTime();
-            await _context.SaveChangesAsync();
+            _context.DataStatus.Update(ds);
+            _context.SaveChanges();
 
             _logger.LogInformation("Done with data update. Going to wait for 12 hours.");
         }
@@ -113,7 +114,8 @@ public sealed class SportsDataIoPlayersWorker : BackgroundService
                 player.PlayerTeam = null;
             }
             ioPlayer.LastUpdated = DateTime.Now.ToLocalTime();
-            await _context.SaveChangesAsync();
+            _context.SportsDataIoPlayers.Update(player);
+            _context.SaveChanges();
 
             return player;
         }

@@ -3,6 +3,9 @@
 .DS_Store
 .env
 
+#Ignoring for now until I can figure out how to get it to work.
+FantasyFootballManager.Ai/**
+
 # Azure Functions localsettings file
 local.settings.json
 

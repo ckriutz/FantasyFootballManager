@@ -69,7 +69,8 @@ public sealed class FantasyProsPlayerWorker : BackgroundService
             // Okay, now that this is done, we need to add the updated date to the database.
             var ds = await _context.DataStatus.FirstOrDefaultAsync(d => d.DataSource == "FantasyPros");
             ds.LastUpdated = DateTime.Now;
-            await _context.SaveChangesAsync();
+            _context.DataStatus.Update(ds);
+            _context.SaveChanges();
 
             _logger.LogInformation("Done with data update. Going to wait for 1 day.");
             return;
@@ -88,7 +89,6 @@ public sealed class FantasyProsPlayerWorker : BackgroundService
             // player already exists, so lets update it.
             existingPlayer.PlayerName = prosPlayer.PlayerName;
             existingPlayer.SportsdataId = prosPlayer.SportsdataId;
-            existingPlayer.LastUpdated = DateTime.Now.ToLocalTime();
 
             // Okay, do players who are 'Inactive' probably don't have a team, so we need to see if it's null first.
             if (!String.IsNullOrEmpty(prosPlayer.PlayerTeamId))
@@ -131,7 +131,8 @@ public sealed class FantasyProsPlayerWorker : BackgroundService
 
             try
             {
-                await _context.SaveChangesAsync();
+                _context.FantasyProsPlayers.Update(existingPlayer);
+                _context.SaveChanges();
             }
             catch (Exception ex)
             {
@@ -139,7 +140,6 @@ public sealed class FantasyProsPlayerWorker : BackgroundService
             }
            
             return existingPlayer;
-            
         }
         else
         {

@@ -70,7 +70,8 @@ public sealed class SleeperPlayersWorker : BackgroundService
             // Okay, now that this is done, we need to add the updated date to the database.
             var ds = await _context.DataStatus.FirstOrDefaultAsync(d => d.DataSource == "Sleeper");
             ds.LastUpdated = DateTime.Now.ToLocalTime();
-            await _context.SaveChangesAsync();
+            _context.DataStatus.Update(ds);
+            _context.SaveChanges();
 
             _logger.LogInformation("Done with data update. Going to wait for 1 day.");  
         }
@@ -141,7 +142,8 @@ public sealed class SleeperPlayersWorker : BackgroundService
             existingPlayer.SportRadarId = sleeperPlayer.SportRadarId;
             existingPlayer.LastUpdated = DateTime.Now;
 
-            await _context.SaveChangesAsync();
+            _context.SleeperPlayers.Update(existingPlayer);
+            _context.SaveChanges();
 
             await UpdateFantasyPlayersTable(existingPlayer);
 
