@@ -113,7 +113,7 @@ public sealed class SportsDataIoPlayersWorker : BackgroundService
             {
                 player.PlayerTeam = null;
             }
-            ioPlayer.LastUpdated = DateTime.Now.ToLocalTime();
+            player.LastUpdated = DateTime.Now.ToLocalTime();
             _context.SportsDataIoPlayers.Update(player);
             _context.SaveChanges();
 
