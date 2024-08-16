@@ -47,6 +47,8 @@ app.UseCors(MyAllowSpecificOrigins);
 using var scope = app.Services.CreateScope();
 using var dbContext = scope.ServiceProvider.GetRequiredService<FantasyDbContext>();
 
+app.MapGet("/version", () => "1.1.0");
+
 app.MapGet("/datastatus", () => 
 { 
     var dataStatus = dbContext.DataStatus.ToArray();

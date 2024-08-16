@@ -45,5 +45,5 @@ jobs:
                 push: true
                 tags: |
                       ghcr.io/ckriutz/fantasyfootballmanager-web:latest
-                      ghcr.io/ckriutz/fantasyfootballmanager-web:${{ github.sha }}
+                      ghcr.io/ckriutz/fantasyfootballmanager-web:${{ github.run_number }}
                 labels: ${{ steps.meta.outputs.tags }}

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import ShowApiHealth from './ShowApiHealth';
+import Version from './Version';
 
 export default function Navbar()
 {
@@ -19,6 +20,7 @@ export default function Navbar()
                 <div className="navbar-nav flex-row order-md-last">
                     <div className="nav-item d-none d-md-flex me-3">
                         <div className="btn-list">
+                            <Version></Version>
                             <ShowApiHealth Health={health}></ShowApiHealth>
                         </div>
                     </div>

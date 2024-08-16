@@ -9,7 +9,7 @@ HostApplicationBuilder builder = Host.CreateApplicationBuilder(args);
 
 var sqlConnectionString = Environment.GetEnvironmentVariable("sqlConnectionString");
 
-Console.WriteLine($"sqlConnectionString: {sqlConnectionString}");
+Console.WriteLine($"Starting Data Service version 1.1.0");
 
 builder.Services.AddDbContext<FantasyFootballManager.DataService.Models.FantasyDbContext>(options => options.UseSqlServer(sqlConnectionString),ServiceLifetime.Transient );
 builder.Services.AddHostedService<FantasyFootballManager.DataService.SleeperPlayersWorker>();
