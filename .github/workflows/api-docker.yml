@@ -32,7 +32,9 @@ jobs:
         - name: Build and publish Docker image
           run: dotnet publish /t:PublishContainer -r linux-arm64
         - name: change image tag
-          run: docker tag 'fantasyfootballmanager-api:latest' 'ghcr.io/ckriutz/fantasyfootballmanager-api:latest'
+          run: |
+            docker tag 'fantasyfootballmanager-api:latest' 'ghcr.io/ckriutz/fantasyfootballmanager-api:latest'
+            docker tag 'fantasyfootballmanager-api:latest' 'ghcr.io/ckriutz/fantasyfootballmanager-api:${{github.run_number}}'
         - name: Log in to GHCR
           run: docker login ghcr.io -u ckriutz -p ${{ secrets.GITHUB_TOKEN }}
         - name: 'Build Inventory Image'
