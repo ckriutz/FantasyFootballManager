@@ -11,13 +11,25 @@ var sqlConnectionString = Environment.GetEnvironmentVariable("sqlConnectionStrin
 Console.WriteLine($"SQL Connection String: {sqlConnectionString}");
 
 var builder = WebApplication.CreateBuilder(args);
+var  MyAllowSpecificOrigins = "_myAllowSpecificOrigins";
 
 // Add services to the container.
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddDbContext<FantasyDbContext>(options => options.UseSqlServer(sqlConnectionString),ServiceLifetime.Transient);
-builder.Services.AddCors();
+
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy(name: MyAllowSpecificOrigins,
+                      policy  =>
+                      {
+                        policy.WithOrigins("http://localhost:3000", "http://ffootball.system-k.io/", "https://ffootball.system-k.io/")
+                        .AllowAnyMethod()
+                        .AllowAnyHeader();
+                      });
+});
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -30,10 +42,7 @@ if (app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 
 // Enable CORS for everything
-app.UseCors(builder => builder
-    .WithOrigins("http://localhost:3000", "http://ffootball.system-k.io/", "https://ffootball.system-k.io/")
-    .AllowAnyMethod()
-    .AllowAnyHeader());
+app.UseCors(MyAllowSpecificOrigins);
 
 using var scope = app.Services.CreateScope();
 using var dbContext = scope.ServiceProvider.GetRequiredService<FantasyDbContext>();
