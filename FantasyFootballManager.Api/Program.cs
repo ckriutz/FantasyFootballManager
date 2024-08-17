@@ -46,7 +46,7 @@ app.UseCors(MyAllowSpecificOrigins);
 using var scope = app.Services.CreateScope();
 using var dbContext = scope.ServiceProvider.GetRequiredService<FantasyDbContext>();
 
-app.MapGet("/version", () => "1.1.3");
+app.MapGet("/version", () => "1.1.4");
 
 app.MapGet("/datastatus", () => 
 { 
@@ -61,7 +61,7 @@ app.MapGet("/fantasyplayer/{sleeperId}", (string sleeperId) =>
     
     var combinedQuery = from sleeper in dbContext.SleeperPlayers where sleeper.PlayerId == sleeperId
     join fantasy in dbContext.FantasyPlayers on sleeper.PlayerId equals fantasy.PlayerId
-    join sportsdata in dbContext.SportsDataIoPlayers on sleeper.FantasyDataId equals sportsdata.PlayerID
+    join sportsdata in dbContext.SportsDataIoPlayers on sleeper.FullName equals sportsdata.Name
     join pros in dbContext.FantasyProsPlayers on sleeper.YahooId.ToString() equals pros.PlayerYahooId
     select new 
     {
