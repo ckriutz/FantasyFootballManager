@@ -39,5 +39,5 @@ jobs:
           run: docker login ghcr.io -u ckriutz -p ${{ secrets.GITHUB_TOKEN }}
         - name: 'Build Inventory Image'
           run: |
-            docker push ghcr.io/ckriutz/fantasyfootballmanager-api:latest
-            docker push ghcr.io/ckriutz/fantasyfootballmanager-api:${{github.run_number}}
+            docker push 'ghcr.io/ckriutz/fantasyfootballmanager-api:latest'
+            docker push 'ghcr.io/ckriutz/fantasyfootballmanager-api:${{github.run_number}}'
