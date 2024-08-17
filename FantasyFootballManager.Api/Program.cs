@@ -11,7 +11,7 @@ var sqlConnectionString = Environment.GetEnvironmentVariable("sqlConnectionStrin
 Console.WriteLine($"SQL Connection String: {sqlConnectionString}");
 
 var builder = WebApplication.CreateBuilder(args);
-var  MyAllowSpecificOrigins = "_myAllowSpecificOrigins";
+var MyAllowSpecificOrigins = "_myAllowSpecificOrigins";
 
 // Add services to the container.
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
@@ -21,13 +21,12 @@ builder.Services.AddDbContext<FantasyDbContext>(options => options.UseSqlServer(
 
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy(name: MyAllowSpecificOrigins,
-                      policy  =>
-                      {
-                        policy.WithOrigins("http://localhost:3000", "http://ffootball.system-k.io/", "https://ffootball.system-k.io/")
-                        .AllowAnyMethod()
-                        .AllowAnyHeader();
-                      });
+    options.AddPolicy(name: MyAllowSpecificOrigins, policy  =>
+    {
+        policy.WithOrigins("http://localhost:3000", "https://ffootball.system-k.io", "http://ffootball.system-k.io", "http://192.168.40.13:3000")
+        .AllowAnyMethod()
+        .AllowAnyHeader();
+    });
 });
 
 var app = builder.Build();
@@ -47,13 +46,13 @@ app.UseCors(MyAllowSpecificOrigins);
 using var scope = app.Services.CreateScope();
 using var dbContext = scope.ServiceProvider.GetRequiredService<FantasyDbContext>();
 
-app.MapGet("/version", () => "1.1.0");
+app.MapGet("/version", () => "1.1.2");
 
 app.MapGet("/datastatus", () => 
 { 
     var dataStatus = dbContext.DataStatus.ToArray();
     return dataStatus;
-});
+}).RequireCors(MyAllowSpecificOrigins);
 
 // Get a single player by SleeperId using Redis.OM
 app.MapGet("/fantasyplayer/{sleeperId}", (string sleeperId) => 
