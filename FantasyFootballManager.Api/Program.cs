@@ -46,7 +46,7 @@ app.UseCors(MyAllowSpecificOrigins);
 using var scope = app.Services.CreateScope();
 using var dbContext = scope.ServiceProvider.GetRequiredService<FantasyDbContext>();
 
-app.MapGet("/version", () => "1.1.4");
+app.MapGet("/version", () => "1.1.5");
 
 app.MapGet("/datastatus", () => 
 { 
@@ -54,7 +54,7 @@ app.MapGet("/datastatus", () =>
     return dataStatus;
 }).RequireCors(MyAllowSpecificOrigins);
 
-// Get a single player by SleeperId using Redis.OM
+// Get a single player by SleeperId
 app.MapGet("/fantasyplayer/{sleeperId}", (string sleeperId) => 
 {
     Console.WriteLine($"Getting player {sleeperId} from the database.");
@@ -62,7 +62,7 @@ app.MapGet("/fantasyplayer/{sleeperId}", (string sleeperId) =>
     var combinedQuery = from sleeper in dbContext.SleeperPlayers where sleeper.PlayerId == sleeperId
     join fantasy in dbContext.FantasyPlayers on sleeper.PlayerId equals fantasy.PlayerId
     join sportsdata in dbContext.SportsDataIoPlayers on sleeper.FullName equals sportsdata.Name
-    join pros in dbContext.FantasyProsPlayers on sleeper.YahooId.ToString() equals pros.PlayerYahooId
+    join pros in dbContext.FantasyProsPlayers on sleeper.SportRadarId equals pros.SportsdataId
     select new 
     {
         sleeper,
