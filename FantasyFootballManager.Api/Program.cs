@@ -46,7 +46,7 @@ app.UseCors(MyAllowSpecificOrigins);
 using var scope = app.Services.CreateScope();
 using var dbContext = scope.ServiceProvider.GetRequiredService<FantasyDbContext>();
 
-app.MapGet("/version", () => "1.1.2");
+app.MapGet("/version", () => "1.1.3");
 
 app.MapGet("/datastatus", () => 
 { 
@@ -83,8 +83,8 @@ app.MapGet("/simplefantasyplayers", () =>
 
     var combinedQuery = from sleeper in dbContext.SleeperPlayers
     join fantasy in dbContext.FantasyPlayers on sleeper.PlayerId equals fantasy.PlayerId
-    join sportsdata in dbContext.SportsDataIoPlayers on sleeper.FantasyDataId equals sportsdata.PlayerID
-    join pros in dbContext.FantasyProsPlayers on sleeper.YahooId.ToString() equals pros.PlayerYahooId
+    join sportsdata in dbContext.SportsDataIoPlayers on sleeper.FullName equals sportsdata.Name
+    join pros in dbContext.FantasyProsPlayers on sleeper.SportRadarId equals pros.SportsdataId
     select new 
     {
         SleeperId = sleeper.PlayerId,
@@ -111,8 +111,8 @@ app.MapGet("/fantasyplayers/search/position/{position}", (string position) =>
 
     var combinedQuery = from sleeper in dbContext.SleeperPlayers where sleeper.Position == position
     join fantasy in dbContext.FantasyPlayers on sleeper.PlayerId equals fantasy.PlayerId
-    join sportsdata in dbContext.SportsDataIoPlayers on sleeper.FantasyDataId equals sportsdata.PlayerID
-    join pros in dbContext.FantasyProsPlayers on sleeper.YahooId.ToString() equals pros.PlayerYahooId
+    join sportsdata in dbContext.SportsDataIoPlayers on sleeper.FullName equals sportsdata.Name
+    join pros in dbContext.FantasyProsPlayers on sleeper.SportRadarId equals pros.SportsdataId
     select new 
     {
         SleeperId = sleeper.PlayerId,
@@ -146,8 +146,8 @@ app.MapGet("/myplayers", () =>
     // Get all the players from FantasyPlayers where IsOnMyTeam is true
     var combinedQuery = from fantasy in dbContext.FantasyPlayers where fantasy.IsOnMyTeam == true
     join sleeper in dbContext.SleeperPlayers on fantasy.PlayerId equals sleeper.PlayerId
-    join sportsdata in dbContext.SportsDataIoPlayers on sleeper.FantasyDataId equals sportsdata.PlayerID
-    join pros in dbContext.FantasyProsPlayers on sleeper.YahooId.ToString() equals pros.PlayerYahooId
+    join sportsdata in dbContext.SportsDataIoPlayers on sleeper.FullName equals sportsdata.Name
+    join pros in dbContext.FantasyProsPlayers on sleeper.SportRadarId equals pros.SportsdataId
     select new 
     {
         sleeper,
@@ -166,8 +166,8 @@ app.MapGet("/availableplayers", () =>
     // Get all the players from FantasyPlayers where IsOnMyTeam is true
     var combinedQuery = from fantasy in dbContext.FantasyPlayers where fantasy.IsTaken == false
     join sleeper in dbContext.SleeperPlayers on fantasy.PlayerId equals sleeper.PlayerId
-    join sportsdata in dbContext.SportsDataIoPlayers on sleeper.FantasyDataId equals sportsdata.PlayerID
-    join pros in dbContext.FantasyProsPlayers on sleeper.YahooId.ToString() equals pros.PlayerYahooId
+    join sportsdata in dbContext.SportsDataIoPlayers on sleeper.FullName equals sportsdata.Name
+    join pros in dbContext.FantasyProsPlayers on sleeper.SportRadarId equals pros.SportsdataId
     select new 
     {
         sleeper,
