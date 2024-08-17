@@ -163,9 +163,21 @@ app.MapGet("/myplayers", () =>
 
 app.MapGet("/availableplayers", () => 
 {
-    Console.WriteLine($"Getting all available players from redis.");
-    //var players = fantasyplayers.Where(x => x.IsTaken == false).ToArray();
-    //return players;
+    Console.WriteLine($"Getting all available players.");
+    // Get all the players from FantasyPlayers where IsOnMyTeam is true
+    var combinedQuery = from fantasy in dbContext.FantasyPlayers where fantasy.IsTaken == false
+    join sleeper in dbContext.SleeperPlayers on fantasy.PlayerId equals sleeper.PlayerId
+    join sportsdata in dbContext.SportsDataIoPlayers on sleeper.FantasyDataId equals sportsdata.PlayerID
+    join pros in dbContext.FantasyProsPlayers on sleeper.YahooId.ToString() equals pros.PlayerYahooId
+    select new 
+    {
+        sleeper,
+        fantasy,
+        sportsdata,
+        pros,
+        Team = sleeper.Team
+    };
+    return combinedQuery.ToList();
 });
 
 // Add a player to my team by updating the datbase.
