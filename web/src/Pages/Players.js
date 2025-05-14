@@ -1,136 +1,96 @@
 import { useState, useEffect } from 'react';
-import Header from '../Components/Header'
-import Navbar from '../Components/Navbar'
-import PlayerRow from '../Components/PlayerRow';
+import Navbar from '../Components/Navbar';
+import { Link } from 'react-router-dom';
+import Breadcrumb from '../Components/Breadcrumb';
 
-import Dropdown from '../Components/Dropdown';
-import DropdownItem from '../Components/DropdownItem';
-import DropdownDivider from '../Components/DropdownDivider';
-
-export default function Players()
-{
-    const [data, setData] = useState(null);
-    const [includeLosers, setIncludeLosers] = useState(false);
+export default function Players() {
+    const [players, setPlayers] = useState([]);
+    const [filteredPlayers, setFilteredPlayers] = useState([]);
+    const [selectedPosition, setSelectedPosition] = useState('All');
 
     useEffect(() => {
-        fetch(process.env.REACT_APP_API_URL + "/simplefantasyplayers", {
-            headers: {
-                "Content-Type": "application/json",
-              },
-        })
-        .then(function(response) {
-            if (response.ok) {
+        // Fetch the sleeper_data.json file
+        fetch('/Data/sleeper_data.json')
+            .then((response) => {
+                if (!response.ok) {
+                    throw new Error('Failed to fetch data');
+                }
                 return response.json();
-            }
-        })
-        .then((data) => setData(data))
+            })
+            .then((data) => {
+                setPlayers(data.players); // Set the players array from the JSON file
+                setFilteredPlayers(data.players); // Initialize filtered players
+            })
+            .catch((error) => console.error('Error fetching player data:', error));
     }, []);
 
-    if(data === undefined) return (<div>Loading...</div>);
+    const handleFilterChange = (event) => {
+        const position = event.target.value;
+        setSelectedPosition(position);
 
-    const filterLosers = (players) => {
-        if(data == null) return;
-        if (includeLosers) {
-            return players;
+        if (position === 'All') {
+            setFilteredPlayers(players);
+        } else {
+            setFilteredPlayers(players.filter(player => player.player_positions.includes(position)));
         }
-        else {
-            return players.filter(player => player.rankEcr > 0);
-        }
-    };
-
-    function HandleLosers(e) {
-        setIncludeLosers(!includeLosers);
-    }
-
-    const updateData = (playerItem) => {
-        console.log(playerItem);
-        const updatedData = data.map((item) => {
-            if (item.sleeperId === playerItem.sleeperId) {
-              return { ...item, player: playerItem };
-            }
-            return item;
-        });
-        setData(updatedData);
-    };
-
-    function addFilter(position) {
-        if (position === "ALL" || position == null) {
-            fetch(process.env.REACT_APP_API_URL + "/simplefantasyplayers")
-            .then((response) => response.json())
-            .then((data) => setData(data));
-            return;
-        }
-        else {
-            fetch(process.env.REACT_APP_API_URL + "/fantasyplayers/search/position/" + position)
-            .then((response) => response.json())
-            .then((data) => setData(data));
-        }
-
     };
 
     return (
         <div className="page">
-            <Header />
             <Navbar />
-            <div className="page-wrapper">
-                <div className="page-body">
-                    <div className="container-xl">
-                        <div className="col-12">
-                            <div className="card">
-                                <div className="card-header">
-                                    <h3 className="card-title">Players <span className="badge bg-green">{data != null ? data.length : 0}</span></h3>
-                                </div>
-                                <div className="card-body border-bottom py-3">
-                                    <div className="d-flex">
-                                        <Dropdown dropdownName="Position">
-                                            <DropdownItem title="ALL" addFilter={addFilter} />
-                                            <DropdownDivider />
-                                            <DropdownItem title="QB" addFilter={addFilter} />
-                                            <DropdownItem title="RB" addFilter={addFilter} />
-                                            <DropdownItem title="WR" addFilter={addFilter} />
-                                            <DropdownItem title="TE" addFilter={addFilter} />
-                                            <DropdownItem title="K" addFilter={addFilter} />
-                                        </Dropdown>
-                                        <div className="mb-3 mt-2 px-3">
-                                            <div className="form-label">
-                                            <label className="form-check pl-3">
-                                                {/*<input className="form-check-input" type="checkbox" checked={!includeLosers} onClick={HandleLosers} />
-                                                <span className="form-check-label">Remove Losers</span>*/}
-                                            </label>
-                                        </div>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div className="table-responsive">
-                                    <table className="table card-table table-vcenter text-nowrap datatable">
-                                        <thead>
-                                            <tr>
-                                                <th className="w-1">Sleeper Id</th>
-                                                <th></th>
-                                                <th>Name</th>
-                                                <th>Position</th>
-                                                <th>Depth</th>
-                                                <th>Team</th>
-                                                <th>Bye</th>
-                                                <th>Rank</th>
-                                                <th>ADP/PPR</th>
-                                                <th>Proj. Points</th>
-                                                <th></th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            {filterLosers(data) && filterLosers(data.sort(function(a, b) {return a.rankEcr - b.rankEcr} )).map((item) => (
-                                                
-                                                <PlayerRow player={item} updateData={updateData} />
-                                            ))}
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+            <Breadcrumb
+                items={[
+                    { label: 'Home', href: '/' },
+                    { label: 'Players', href: '/players' },
+                ]}
+            />
+            <div className="container mx-auto px-4 py-8">
+                <h1 className="text-2xl font-bold text-gray-800 mb-4">Players</h1>
+
+                {/* Filter Dropdown */}
+                <div className="mb-4">
+                    <label htmlFor="position-filter" className="block text-gray-700 font-medium mb-2">Filter by Position:</label>
+                    <select
+                        id="position-filter"
+                        value={selectedPosition}
+                        onChange={handleFilterChange}
+                        className="border border-gray-300 rounded px-4 py-2 w-full md:w-1/3"
+                    >
+                        <option value="All">All</option>
+                        <option value="QB">Quarterback (QB)</option>
+                        <option value="RB">Running Back (RB)</option>
+                        <option value="WR">Wide Receiver (WR)</option>
+                        <option value="TE">Tight End (TE)</option>
+                        <option value="K">Kicker (K)</option>
+                        <option value="DEF">Defense (DEF)</option>
+                    </select>
+                </div>
+
+                <div className="overflow-x-auto">
+                    <table className="min-w-full border-collapse border border-gray-300">
+                        <thead>
+                            <tr className="bg-gray-800 text-white">
+                                <th className="border border-gray-300 px-4 py-2 text-left">Name</th>
+                                <th className="border border-gray-300 px-4 py-2 text-left">Position</th>
+                                <th className="border border-gray-300 px-4 py-2 text-left">Team</th>
+                                <th className="border border-gray-300 px-4 py-2 text-left">Rank</th>
+                                <th className="border border-gray-300 px-4 py-2 text-left">Bye</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {filteredPlayers.map((player) => (
+                                <tr key={player.player_id} className="odd:bg-white even:bg-gray-100">
+                                    <td className="border border-gray-300 px-4 py-2 text-blue-600 hover:text-blue-700"><Link to={`/player/${player.player_id}`}>{player.player_name}</Link></td>
+                                    <td className="border border-gray-300 px-4 py-2">{player.player_positions}</td>
+                                    <td className="border border-gray-300 px-4 py-2">{player.player_team_id}</td>
+                                    <td className="border border-gray-300 px-4 py-2">{player.rank_ecr}</td>
+                                    <td className="border border-gray-300 px-4 py-2">{player.player_bye_week}</td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
                 </div>
             </div>
         </div>
-    )
+    );
 }
