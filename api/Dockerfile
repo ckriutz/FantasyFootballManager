@@ -1,20 +1,35 @@
-# Use an official Node.js runtime as the base image
-FROM node:21-bookworm-slim
+# Use the official Python image as the base image
+FROM python:3.12-slim
 
-# Set the working directory in the container to /app
+# Set the working directory in the container
 WORKDIR /app
 
-# Copy package.json and package-lock.json to the working directory
-COPY package*.json ./
+# Install system dependencies
+RUN apt-get update && apt-get install -y curl gnupg2
 
-# Install the application dependencies
-RUN npm install
+# Add Microsoft's package signing key and repository
+RUN curl -fsSL https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor -o /usr/share/keyrings/microsoft-archive-keyring.gpg
+RUN echo 'deb [signed-by=/usr/share/keyrings/microsoft-archive-keyring.gpg] https://packages.microsoft.com/debian/12/prod bookworm main' > /etc/apt/sources.list.d/mssql-release.list
 
-# Copy the rest of the application code to the working directory
+# Install the ODBC driver and Python dependencies
+RUN apt-get update && ACCEPT_EULA=Y apt-get install -y msodbcsql18
+RUN pip3 install pyodbc sqlalchemy
+
+# Install additional Python dependencies if requirements.txt exists
+RUN if [ -f requirements.txt ]; then pip3 install -r requirements.txt; fi
+
+# Copy the requirements file into the container
+COPY requirements.txt .
+
+# Install Python dependencies
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy the FastAPI application code into the container
 COPY . .
 
-# Expose port 3000 for the application
-EXPOSE 3000
+# Expose the port FastAPI will run on
+EXPOSE 8000
+EXPOSE 80
 
-# Define the command to run the application
-CMD [ "npm", "start" ]
+# Command to run the FastAPI application
+CMD ["fastapi", "run", "main.py", "--port", "80"]

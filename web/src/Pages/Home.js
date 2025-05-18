@@ -1,7 +1,5 @@
 import { useState, useEffect } from 'react';
 import Navbar from '../Components/Navbar'
-import DataStatusCard from '../Components/DataStatusCard';
-import PlayerCard from '../Components/PlayerCard';
 
 export default function Home() {
     //const [data, setData] = useState(null);

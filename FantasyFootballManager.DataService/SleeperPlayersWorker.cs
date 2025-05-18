@@ -1,10 +1,10 @@
-using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.EntityFrameworkCore;
+using System.Diagnostics.CodeAnalysis;
 
 namespace FantasyFootballManager.DataService;
 
-public sealed class SleeperPlayersWorker : BackgroundService
+public sealed class SleeperPlayersWorker
 {
     private readonly ILogger<SleeperPlayersWorker> _logger;
     private readonly Models.FantasyDbContext _context;
@@ -15,91 +15,84 @@ public sealed class SleeperPlayersWorker : BackgroundService
         _context = context;
     }
 
-    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+    public async Task RunAsync(CancellationToken cancellationToken = default)
     {
-        _logger.LogInformation("Starting Sleeper Players Worker...");
+        _logger.LogInformation("Running SleeperPlayersWorker...");
 
-        while (!stoppingToken.IsCancellationRequested)
+        await CleanUpDatabaseAsync(cancellationToken);
+
+        Dictionary<string, Models.SleeperPlayer> sleeperPlayersDictionary = new();
+        
+        try
         {
-            if(stoppingToken.IsCancellationRequested)
+            using HttpClient client = new();
+            client.DefaultRequestHeaders.Accept.Clear();
+            var stringResponse = await client.GetStringAsync("https://api.sleeper.app/v1/players/nfl", cancellationToken);
+
+            sleeperPlayersDictionary = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, Models.SleeperPlayer>>(stringResponse);
+            if (sleeperPlayersDictionary == null)
             {
-                _logger.LogError("Cancellation requested. Exiting.");
+                _logger.LogError("Failed to deserialize Sleeper API response.");
                 return;
             }
-
-            //await CleanUpDatabase();
-
-            var lastUpdate = await GetLastUpdatedTime();
-            if (lastUpdate.AddDays(1) > DateTime.Now)
-            {
-                _logger.LogInformation($"Data was updated less than 1 day ago. Exiting. Will update again around {lastUpdate.AddDays(1)}");
-                await Task.Delay(TimeSpan.FromMinutes(5), stoppingToken);
-                continue;
-            }
-            
-            var jsonString = string.Empty;
-            try
-            {
-                using HttpClient client = new();
-                client.DefaultRequestHeaders.Accept.Clear();
-                jsonString = await client.GetStringAsync("https://api.sleeper.app/v1/players/nfl");
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError($"Error getting data from Sleeper API: {ex.Message}");
-                await Task.Delay(TimeSpan.FromMinutes(5), stoppingToken);
-                continue;
-            }
-
-            var sleeperPlayersDictionary = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, Models.SleeperPlayer>>(jsonString)!;
-
             _logger.LogInformation($"Sleeper API returned {sleeperPlayersDictionary.Count} players.");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError($"Error getting data from Sleeper API: {ex.Message}");
+        }
 
-            //Now, we need to iterate though the players, and add them to the database.
-            foreach (var player in sleeperPlayersDictionary)
-            {
-                // Now, this might be a TEAM and not a player, and if that's the case, we should skip it.
-                if (int.TryParse(player.Key, out int result) == false)
-                {
-                    continue;
-                }
-                
-                await AddPlayerToDatabaseAsync(player.Value);
-            }
+        if (sleeperPlayersDictionary.Count == 0)
+        {
+            _logger.LogError("No data from Sleeper API.");
+            return;
+        }
 
-            // Okay, now that this is done, we need to add the updated date to the database.
-            var ds = await _context.DataStatus.FirstOrDefaultAsync(d => d.DataSource == "Sleeper");
+        foreach (var player in sleeperPlayersDictionary)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+
+            if (!int.TryParse(player.Key, out _))
+                continue;
+
+            await AddPlayerToDatabaseAsync(player.Value, cancellationToken);
+        }
+
+        // Update DataStatus once after all players are processed
+        var ds = await _context.DataStatus.FirstOrDefaultAsync(d => d.DataSource == "Sleeper", cancellationToken);
+        if (ds != null)
+        {
             ds.LastUpdated = DateTime.Now.ToLocalTime();
             _context.DataStatus.Update(ds);
-            _context.SaveChanges();
-
-            _logger.LogInformation("Done with data update. Going to wait for 1 day.");  
         }
+
+        await _context.SaveChangesAsync(cancellationToken);
+        _logger.LogInformation("Done with data update.");
     }
 
-    private async Task CleanUpDatabase()
+    private async Task CleanUpDatabaseAsync(CancellationToken cancellationToken)
     {
-        // So we need to go though all the players in the database, and see if their Full Name is "Duplicate Player".
-        // If it is, we need to remove it from both SQL AND Redis.
-        var players = await _context.SleeperPlayers.Where(p => p.FullName == "Duplicate Player").ToListAsync();
+        var players = await _context.SleeperPlayers
+            .Where(p => p.FullName == "Duplicate Player")
+            .ToListAsync(cancellationToken);
+
         foreach (var player in players)
         {
+            cancellationToken.ThrowIfCancellationRequested();
             _logger.LogInformation($"Removing player: {player.PlayerId}");
             _context.SleeperPlayers.Remove(player);
-            await _context.SaveChangesAsync();
         }
     }
-    private async Task<Models.SleeperPlayer> AddPlayerToDatabaseAsync(Models.SleeperPlayer sleeperPlayer)
-    {
-        // So there can be some players named "Duplicate Player".
-        // We need to skip those.
-        if (sleeperPlayer.FullName == "Duplicate Player")
-        {
-            return null;
-        }
 
-        // Does the player already exist?
-        var existingPlayer = await _context.SleeperPlayers.Include("Team").FirstOrDefaultAsync(p => p.PlayerId == sleeperPlayer.PlayerId);
+    private async Task<Models.SleeperPlayer?> AddPlayerToDatabaseAsync(Models.SleeperPlayer sleeperPlayer, CancellationToken cancellationToken)
+    {
+        if (sleeperPlayer.FullName == "Duplicate Player")
+            return null;
+
+        var existingPlayer = await _context.SleeperPlayers
+            .Include("Team")
+            .FirstOrDefaultAsync(p => p.PlayerId == sleeperPlayer.PlayerId, cancellationToken);
+
         if (existingPlayer != null)
         {
             _logger.LogInformation($"Updating existing player: {sleeperPlayer.SearchFullName}");
@@ -125,7 +118,7 @@ public sealed class SleeperPlayersWorker : BackgroundService
             if (!String.IsNullOrEmpty(sleeperPlayer.TeamAbbreviation))
             {
                 // You know what? Who cares what the existing team is. Just update it.
-                existingPlayer.Team = _context.Teams.FirstOrDefault(t => t.Abbreviation == sleeperPlayer.TeamAbbreviation);
+                existingPlayer.Team = await _context.Teams.FirstOrDefaultAsync(t => t.Abbreviation == sleeperPlayer.TeamAbbreviation, cancellationToken);
             }
             else
             {
@@ -143,9 +136,6 @@ public sealed class SleeperPlayersWorker : BackgroundService
             existingPlayer.LastUpdated = DateTime.Now;
 
             _context.SleeperPlayers.Update(existingPlayer);
-            _context.SaveChanges();
-
-            await UpdateFantasyPlayersTable(existingPlayer);
 
             return existingPlayer;
         }
@@ -157,38 +147,10 @@ public sealed class SleeperPlayersWorker : BackgroundService
         }
  
         _context.SleeperPlayers.Add(sleeperPlayer);
-        await _context.SaveChangesAsync();
-
-        await UpdateFantasyPlayersTable(sleeperPlayer);
 
         return sleeperPlayer;
     }
 
-    private async Task UpdateFantasyPlayersTable(Models.SleeperPlayer sleeperPlayer)
-    {
-        var fantasyPlayer = await _context.FantasyPlayers.FirstOrDefaultAsync(f => f.PlayerId == sleeperPlayer.PlayerId);
-        if (fantasyPlayer == null)
-        {
-            _logger.LogInformation($"Adding new player to FantasyPlayers: {sleeperPlayer.SearchFullName}");
-            fantasyPlayer = new Models.FantasyPlayer()
-            {
-                PlayerId = sleeperPlayer.PlayerId,
-                IsThumbsUp = false,
-                IsThumbsDown = false,
-                IsTaken = false,
-                IsOnMyTeam = false,
-                LastUpdated = DateTime.Now
-            };
-            _context.FantasyPlayers.Add(fantasyPlayer);
-            await _context.SaveChangesAsync();
-        }
-    }
-
-    private async Task<DateTime> GetLastUpdatedTime()
-    {
-        var ds = await _context.DataStatus.FirstOrDefaultAsync(d => d.DataSource == "Sleeper");
-        return ds.LastUpdated.ToLocalTime();
-    }
 
     
 }

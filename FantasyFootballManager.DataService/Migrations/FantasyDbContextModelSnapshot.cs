@@ -42,48 +42,6 @@ namespace FantasyFootballManager.DataService.Migrations
                     b.ToTable("DataStatus");
                 });
 
-            modelBuilder.Entity("FantasyFootballManager.DataService.Models.FantasyPlayer", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<bool>("IsOnMyTeam")
-                        .HasColumnType("bit");
-
-                    b.Property<bool>("IsTaken")
-                        .HasColumnType("bit");
-
-                    b.Property<bool>("IsThumbsDown")
-                        .HasColumnType("bit");
-
-                    b.Property<bool>("IsThumbsUp")
-                        .HasColumnType("bit");
-
-                    b.Property<DateTime>("LastUpdated")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int?>("PickNumber")
-                        .HasColumnType("int");
-
-                    b.Property<int?>("PickRound")
-                        .HasColumnType("int");
-
-                    b.Property<string>("PickedBy")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("PlayerId")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("FantasyPlayers");
-                });
-
             modelBuilder.Entity("FantasyFootballManager.DataService.Models.FantasyProsPlayer", b =>
                 {
                     b.Property<int>("Id")
@@ -230,11 +188,9 @@ namespace FantasyFootballManager.DataService.Migrations
 
             modelBuilder.Entity("FantasyFootballManager.DataService.Models.SleeperPlayer", b =>
                 {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+                    b.Property<string>("PlayerId")
+                        .HasColumnType("nvarchar(450)")
+                        .HasAnnotation("Relational:JsonPropertyName", "player_id");
 
                     b.Property<int?>("Age")
                         .HasColumnType("int")
@@ -323,11 +279,6 @@ namespace FantasyFootballManager.DataService.Migrations
                         .HasColumnType("int")
                         .HasAnnotation("Relational:JsonPropertyName", "number");
 
-                    b.Property<string>("PlayerId")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)")
-                        .HasAnnotation("Relational:JsonPropertyName", "player_id");
-
                     b.Property<string>("Position")
                         .HasColumnType("nvarchar(max)")
                         .HasAnnotation("Relational:JsonPropertyName", "position");
@@ -387,7 +338,7 @@ namespace FantasyFootballManager.DataService.Migrations
                         .HasColumnType("int")
                         .HasAnnotation("Relational:JsonPropertyName", "years_exp");
 
-                    b.HasKey("Id");
+                    b.HasKey("PlayerId");
 
                     b.HasIndex("TeamId");
 

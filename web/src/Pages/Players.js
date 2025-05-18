@@ -10,7 +10,7 @@ export default function Players() {
 
     useEffect(() => {
         // Fetch the sleeper_data.json file
-        fetch('/Data/sleeper_data.json')
+        fetch('http://127.0.0.1:8000/players')
             .then((response) => {
                 if (!response.ok) {
                     throw new Error('Failed to fetch data');
@@ -18,8 +18,8 @@ export default function Players() {
                 return response.json();
             })
             .then((data) => {
-                setPlayers(data.players); // Set the players array from the JSON file
-                setFilteredPlayers(data.players); // Initialize filtered players
+                setPlayers(data); // Set the players array from the JSON file
+                setFilteredPlayers(data); // Initialize filtered players
             })
             .catch((error) => console.error('Error fetching player data:', error));
     }, []);
@@ -31,10 +31,18 @@ export default function Players() {
         if (position === 'All') {
             setFilteredPlayers(players);
         } else {
-            setFilteredPlayers(players.filter(player => player.player_positions.includes(position)));
+            setFilteredPlayers(players.filter(player => player.PlayerPositionId.includes(position)));
         }
     };
 
+    if (players.length === 0) {
+        return (
+            <div className="flex items-center justify-center h-screen">
+                <p className="text-gray-500">Loading...</p>
+            </div>
+        );
+    }
+    else {
     return (
         <div className="page">
             <Navbar />
@@ -79,12 +87,12 @@ export default function Players() {
                         </thead>
                         <tbody>
                             {filteredPlayers.map((player) => (
-                                <tr key={player.player_id} className="odd:bg-white even:bg-gray-100">
-                                    <td className="border border-gray-300 px-4 py-2 text-blue-600 hover:text-blue-700"><Link to={`/player/${player.player_id}`}>{player.player_name}</Link></td>
-                                    <td className="border border-gray-300 px-4 py-2">{player.player_positions}</td>
-                                    <td className="border border-gray-300 px-4 py-2">{player.player_team_id}</td>
-                                    <td className="border border-gray-300 px-4 py-2">{player.rank_ecr}</td>
-                                    <td className="border border-gray-300 px-4 py-2">{player.player_bye_week}</td>
+                                <tr key={player.PlayerId} className="odd:bg-white even:bg-gray-100">
+                                    <td className="border border-gray-300 px-4 py-2 text-blue-600 hover:text-blue-700"><Link to={`/player/${player.PlayerId}`}>{player.PlayerName}</Link></td>
+                                    <td className="border border-gray-300 px-4 py-2">{player.PlayerPositionId}</td>
+                                    <td className="border border-gray-300 px-4 py-2">{player.Name}</td>
+                                    <td className="border border-gray-300 px-4 py-2">{player.RankEcr}</td>
+                                    <td className="border border-gray-300 px-4 py-2">{player.PlayerByeWeek}</td>
                                 </tr>
                             ))}
                         </tbody>
@@ -93,4 +101,5 @@ export default function Players() {
             </div>
         </div>
     );
+}
 }

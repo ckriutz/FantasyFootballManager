@@ -12,15 +12,15 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace FantasyFootballManager.DataService.Migrations
 {
     [DbContext(typeof(FantasyDbContext))]
-    [Migration("20230823151811_FantasyProsIdentityPart2")]
-    partial class FantasyProsIdentityPart2
+    [Migration("20250517233328_InitialCreate")]
+    partial class InitialCreate
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "7.0.10")
+                .HasAnnotation("ProductVersion", "8.0.6")
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
@@ -62,7 +62,6 @@ namespace FantasyFootballManager.DataService.Migrations
                         .HasColumnType("datetime2");
 
                     b.Property<string>("PlayerByeWeek")
-                        .IsRequired()
                         .HasColumnType("nvarchar(max)")
                         .HasAnnotation("Relational:JsonPropertyName", "player_bye_week");
 
@@ -76,7 +75,7 @@ namespace FantasyFootballManager.DataService.Migrations
                         .HasColumnType("nvarchar(max)")
                         .HasAnnotation("Relational:JsonPropertyName", "player_filename");
 
-                    b.Property<int>("PlayerIdNew")
+                    b.Property<int>("PlayerId")
                         .HasColumnType("int")
                         .HasAnnotation("Relational:JsonPropertyName", "player_id");
 
@@ -192,11 +191,9 @@ namespace FantasyFootballManager.DataService.Migrations
 
             modelBuilder.Entity("FantasyFootballManager.DataService.Models.SleeperPlayer", b =>
                 {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+                    b.Property<string>("PlayerId")
+                        .HasColumnType("nvarchar(450)")
+                        .HasAnnotation("Relational:JsonPropertyName", "player_id");
 
                     b.Property<int?>("Age")
                         .HasColumnType("int")
@@ -285,11 +282,6 @@ namespace FantasyFootballManager.DataService.Migrations
                         .HasColumnType("int")
                         .HasAnnotation("Relational:JsonPropertyName", "number");
 
-                    b.Property<string>("PlayerId")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)")
-                        .HasAnnotation("Relational:JsonPropertyName", "player_id");
-
                     b.Property<string>("Position")
                         .HasColumnType("nvarchar(max)")
                         .HasAnnotation("Relational:JsonPropertyName", "position");
@@ -349,7 +341,7 @@ namespace FantasyFootballManager.DataService.Migrations
                         .HasColumnType("int")
                         .HasAnnotation("Relational:JsonPropertyName", "years_exp");
 
-                    b.HasKey("Id");
+                    b.HasKey("PlayerId");
 
                     b.HasIndex("TeamId");
 

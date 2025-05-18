@@ -1,94 +1,89 @@
-using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
+using System.Diagnostics.CodeAnalysis;
 namespace FantasyFootballManager.DataService;
 
-public sealed class SportsDataIoPlayersWorker : BackgroundService
+public sealed class SportsDataIoPlayersWorker
 {
     private readonly ILogger<SportsDataIoPlayersWorker> _logger;
     private readonly Models.FantasyDbContext _context;
 
-   public SportsDataIoPlayersWorker(ILogger<SportsDataIoPlayersWorker> logger, Models.FantasyDbContext context)
+    public SportsDataIoPlayersWorker(ILogger<SportsDataIoPlayersWorker> logger, Models.FantasyDbContext context)
     {
         _logger = logger;
         _context = context;
     }
 
-    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+    public async Task RunAsync(CancellationToken cancellationToken = default)
     {
-        while (!stoppingToken.IsCancellationRequested)
+        _logger.LogInformation("Running SportsDataIoPlayersWorker...");
+
+        List<Models.SportsDataIoPlayer> sportsDataIoPlayers = new();
+
+        try
         {
-            if(stoppingToken.IsCancellationRequested)
+            using HttpClient client = new();
+            client.DefaultRequestHeaders.Accept.Clear();
+            client.DefaultRequestHeaders.Add("Ocp-Apim-Subscription-Key", Environment.GetEnvironmentVariable("SportsDataIoOcpApimKey"));
+            var stringResponse = await client.GetStringAsync("https://fly.sportsdata.io/v3/nfl/stats/json/FantasyPlayers", cancellationToken);
+
+            sportsDataIoPlayers = JsonSerializer.Deserialize<List<Models.SportsDataIoPlayer>>(stringResponse);
+            if (sportsDataIoPlayers == null)
             {
-                _logger.LogError("Cancellation requested. Exiting.");
+                _logger.LogError("Failed to deserialize SportsData.io API response.");
                 return;
             }
+            _logger.LogInformation($"SportsData.io API returned {sportsDataIoPlayers.Count} players.");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError($"Error getting data from SportsData.io: {ex.Message}");
+            return;
+        }
 
-            var lastUpdate = await GetLastUpdatedTime();
-            if (lastUpdate.AddHours(12) > DateTime.Now)
-            {
-                _logger.LogInformation($"Data was updated less than 12 hours ago. Exiting. Will update again around {lastUpdate.AddHours(12)}");
-                await Task.Delay(TimeSpan.FromMinutes(5), stoppingToken);
-                continue;
-            }
+        if (sportsDataIoPlayers.Count == 0)
+        {
+            _logger.LogError("No data from SportsData.io API.");
+            return;
+        }
 
-            _logger.LogInformation("Updating SportsDataIO Players");
+        foreach (var player in sportsDataIoPlayers)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            await AddPlayerToDatabaseAsync(player, cancellationToken);
+        }
 
-            var jsonString = string.Empty;
-            try
-            {
-                using HttpClient client = new();
-                client.DefaultRequestHeaders.Accept.Clear();
-                client.DefaultRequestHeaders.Add("Ocp-Apim-Subscription-Key", Environment.GetEnvironmentVariable("SportsDataIoOcpApimKey"));
-                jsonString = await client.GetStringAsync("https://fly.sportsdata.io/v3/nfl/stats/json/FantasyPlayers");
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError($"Error getting data from SportsData.io: {ex.Message}");
-                await Task.Delay(TimeSpan.FromMinutes(5), stoppingToken);
-                continue;
-            }
-
-            var sportsDataIoPlayers = JsonSerializer.Deserialize<List<Models.SportsDataIoPlayer>>(jsonString)!;
-            _logger.LogInformation($"Found {sportsDataIoPlayers.Count} players from SportsData.io.");
-
-            foreach (var player in sportsDataIoPlayers)
-            {
-                await AddPlayerToDatabaseAsync(player);
-            }
-
-            // Okay, now that this is done, we need to add the updated date to the database.
-            var ds = await _context.DataStatus.FirstOrDefaultAsync(d => d.DataSource == "SportsDataIO");
+        var ds = await _context.DataStatus.FirstOrDefaultAsync(d => d.DataSource == "SportsDataIO", cancellationToken);
+        if (ds != null)
+        {
             ds.LastUpdated = DateTime.Now.ToLocalTime();
             _context.DataStatus.Update(ds);
-            _context.SaveChanges();
-
-            _logger.LogInformation("Done with data update. Going to wait for 12 hours.");
         }
+        await _context.SaveChangesAsync(cancellationToken);
+
+        _logger.LogInformation("Done with SportsDataIo Data update.");
     }
 
-    private async Task<Models.SportsDataIoPlayer> AddPlayerToDatabaseAsync(Models.SportsDataIoPlayer ioPlayer)
+    private async Task<Models.SportsDataIoPlayer> AddPlayerToDatabaseAsync(Models.SportsDataIoPlayer ioPlayer, CancellationToken cancellationToken)
     {
-        var player = await _context.SportsDataIoPlayers.FirstOrDefaultAsync(p => p.PlayerID == ioPlayer.PlayerID);
+        var player = await _context.SportsDataIoPlayers.FirstOrDefaultAsync(p => p.PlayerID == ioPlayer.PlayerID, cancellationToken);
         if (player == null)
         {
             _logger.LogInformation($"Adding player {ioPlayer.Name} in database.");
 
-            if (!String.IsNullOrEmpty(ioPlayer.TeamAbbreviation))
-            {       
-                ioPlayer.PlayerTeam = _context.Teams.FirstOrDefault(t => t.Abbreviation == ioPlayer.TeamAbbreviation);
+            if (!string.IsNullOrEmpty(ioPlayer.TeamAbbreviation))
+            {
+                ioPlayer.PlayerTeam = await _context.Teams.FirstOrDefaultAsync(t => t.Abbreviation == ioPlayer.TeamAbbreviation, cancellationToken);
             }
             ioPlayer.LastUpdated = DateTime.Now.ToLocalTime();
 
-            await _context.SportsDataIoPlayers.AddAsync(ioPlayer);
-            await _context.SaveChangesAsync();
+            await _context.SportsDataIoPlayers.AddAsync(ioPlayer, cancellationToken);
 
             return ioPlayer;
         }
         else
         {
-            // lets update the player with the new data.
             _logger.LogInformation($"Player {ioPlayer.Name} already exists in database. Updating.");
             player.Position = ioPlayer.Position;
             player.AverageDraftPosition = ioPlayer.AverageDraftPosition;
@@ -103,11 +98,9 @@ public sealed class SportsDataIoPlayersWorker : BackgroundService
             player.AverageDraftPositionDynasty = ioPlayer.AverageDraftPositionDynasty;
             player.AverageDraftPosition2QB = ioPlayer.AverageDraftPosition2QB;
 
-            // OKay, do players who aer 'Inactive' probably don't have a team, so we need to see if it's null first.
-            if (!String.IsNullOrEmpty(ioPlayer.TeamAbbreviation))
+            if (!string.IsNullOrEmpty(ioPlayer.TeamAbbreviation))
             {
-                // You know what? Who cares what the existing team is. Just update it.
-                player.PlayerTeam = _context.Teams.FirstOrDefault(t => t.Abbreviation == ioPlayer.TeamAbbreviation);
+                player.PlayerTeam = await _context.Teams.FirstOrDefaultAsync(t => t.Abbreviation == ioPlayer.TeamAbbreviation, cancellationToken);
             }
             else
             {
@@ -115,32 +108,8 @@ public sealed class SportsDataIoPlayersWorker : BackgroundService
             }
             player.LastUpdated = DateTime.Now.ToLocalTime();
             _context.SportsDataIoPlayers.Update(player);
-            _context.SaveChanges();
 
             return player;
         }
-    }
-
-    private async Task<DateTime> GetLastUpdatedTime()
-    {
-        var ds = await _context.DataStatus.FirstOrDefaultAsync(d => d.DataSource == "SportsDataIO");
-        return ds.LastUpdated.ToLocalTime();
-    }
-
-    private string FixedPlayer(string playerName)
-    {
-        if(playerName == "D.J. Chark")
-        {
-            return "DJ Chark";
-        }
-        if(playerName == "Kenneth Walker III")
-        {
-            return "Kenneth Walker";
-        }
-        if(playerName == "Mecole Hardman Jr.")
-        {
-            return "Mecole Hardman";
-        }
-        return playerName;
     }
 }

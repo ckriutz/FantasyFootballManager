@@ -1,6 +1,4 @@
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.SqlServer;
-using Microsoft.EntityFrameworkCore.Design;
 
 namespace FantasyFootballManager.DataService.Models;
 public class FantasyDbContext : DbContext
@@ -10,7 +8,7 @@ public class FantasyDbContext : DbContext
     public DbSet<SportsDataIoPlayer> SportsDataIoPlayers { get; set; }
     public DbSet<Team> Teams { get; set; }
     public DbSet<DataStatus> DataStatus { get; set; }
-    public DbSet<FantasyPlayer> FantasyPlayers { get; set; }
+
 
     public FantasyDbContext() { }
         

@@ -9,7 +9,8 @@ export default function Player() {
 
     useEffect(() => {
         // Fetch the sleeper_data.json file
-        fetch('/Data/sleeper_data.json')
+        console.log('Fetching player data for ID:', id);
+        fetch('http://127.0.0.1:8000/player/' + id)
             .then((response) => {
                 if (!response.ok) {
                     throw new Error('Failed to fetch data');
@@ -17,8 +18,7 @@ export default function Player() {
                 return response.json();
             })
             .then((data) => {
-                const foundPlayer = data.players.find((p) => p.player_id === Number(id)); // Match player by id
-                setPlayer(foundPlayer); // Set the specific player
+                setPlayer(data[0]); // Set the specific player
             })
             .catch((error) => console.error('Error fetching player data:', error));
     }, [id]);
@@ -32,7 +32,7 @@ export default function Player() {
                     items={[
                         { label: 'Home', href: '/' },
                         { label: 'Players', href: '/players' },
-                        { label: player.player_name, href: '/player/'+id }
+                        { label: player.PlayerName, href: '/player/'+id }
                     ]}
                 />
                 <div className="container mx-auto p-4">
@@ -40,22 +40,22 @@ export default function Player() {
                         <div className="flex items-center space-x-4 mb-6">
                             {/* Player Image */}
                             <img
-                                src={player.player_square_image_url || '/placeholder-image.png'}
-                                alt={`${player.player_name}`}
+                                src={player.PlayerImageUrl || '/placeholder-image.png'}
+                                alt={`${player.PlayerName}`}
                                 className="w-24 h-24 rounded-full object-cover shadow-md"
                             />
                             {/* Player Name */}
-                            <h1 className="text-2xl font-bold text-gray-800">{player.player_name}</h1>
+                            <h1 className="text-2xl font-bold text-gray-800">{player.PLayerName	}</h1>
                             <div className="p-6 ml-4 bg-gray-50 rounded shadow text-center">
-                                <p className="text-3xl font-semibold tracking-tight text-balance ">{player.player_positions || 'N/A'}</p>
+                                <p className="text-3xl font-semibold tracking-tight text-balance ">{player.PlayerPositions || 'N/A'}</p>
                                 <p className="text-xs font-medium text-gray-700">position</p>
                             </div>
                             <div className="p-6 ml-4 bg-gray-50 rounded shadow text-center">
-                                <p className="text-3xl font-semibold tracking-tight text-balance ">{player.player_team_id || 'N/A'}</p>
+                                <p className="text-3xl font-semibold tracking-tight text-balance ">{player.PlayerTeamId || 'N/A'}</p>
                                 <p className="text-xs font-medium text-gray-700">team</p>
                             </div>
                             <div className="p-6 ml-4 bg-gray-50 rounded shadow text-center">
-                                <p className="text-3xl font-semibold tracking-tight text-balance ">{player.rank_ecr || 'N/A'}</p>
+                                <p className="text-3xl font-semibold tracking-tight text-balance ">{player.RankEcr || 'N/A'}</p>
                                 <p className="text-xs font-medium text-gray-700">rank</p>
                             </div>
                         </div>
@@ -67,13 +67,13 @@ export default function Player() {
                                     <div className="flex items-center">
                                         <label className="w-1/4 text-gray-700 font-medium">Tier:</label>
                                         <div className="flex-1 bg-white border border-gray-300 rounded-md px-3 py-2 text-gray-800">
-                                            {player.tier || 'N/A'}
+                                            {player.Tier || 'N/A'}
                                         </div>
                                     </div>
                                     <div className="flex items-center">
                                         <label className="w-1/4 text-gray-700 font-medium">Bye Week:</label>
                                         <div className="flex-1 bg-white border border-gray-300 rounded-md px-3 py-2 text-gray-800">
-                                            {player.player_bye_week || 'N/A'}
+                                            {player.PlayerByeWeek || 'N/A'}
                                         </div>
                                     </div>
                                 </div>
@@ -82,13 +82,13 @@ export default function Player() {
                                     <div className="flex items-center">
                                         <label className="w-1/4 text-gray-700 font-medium">Owned Avg:</label>
                                         <div className="flex-1 bg-white border border-gray-300 rounded-md px-3 py-2 text-gray-800">
-                                            {player.player_owned_avg || 'N/A'}
+                                            {player.PlayerOwnedAvg || 'N/A'}
                                         </div>
                                     </div>
                                     <div className="flex items-center">
                                         <label className="w-1/4 text-gray-700 font-medium">Position Rank:</label>
                                         <div className="flex-1 bg-white border border-gray-300 rounded-md px-3 py-2 text-gray-800">
-                                            {player.pos_rank || 'N/A'}
+                                            {player.PosRank || 'N/A'}
                                         </div>
                                     </div>
                                 </div>

@@ -1,11 +1,15 @@
 using System.Text.Json.Serialization;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.ComponentModel.DataAnnotations;
 
 namespace FantasyFootballManager.DataService.Models;
 
 public class SleeperPlayer
 {
-    public int Id { get; set; }
+    [Key]
+    [DatabaseGenerated(DatabaseGeneratedOption.None)]
+    [JsonPropertyName("player_id")]
+    public required string PlayerId { get; set; }
 
     [JsonPropertyName("status")]
     public string? Status { get; set; }
@@ -111,9 +115,6 @@ public class SleeperPlayer
     [JsonPropertyName("rotowire_id")]
     public int? RotowireId { get; set; }
 
-    [JsonPropertyName("player_id")]
-    public string PlayerId { get; set; }
-
     [NotMapped]
     [JsonPropertyName("injury_start_date")]
     public DateTime? injuryStartDate { get; set; }
@@ -157,5 +158,5 @@ public class SleeperPlayer
     [JsonPropertyName("sportradar_id")]
     public string? SportRadarId { get; set; }
 
-    public DateTime LastUpdated { get; set; } = DateTime.Now;
+    public DateTime LastUpdated { get; set; }
 }
