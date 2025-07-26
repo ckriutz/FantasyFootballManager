@@ -48,18 +48,38 @@ public sealed class SportsDataIoPlayersWorker
             return;
         }
 
+        int batchSize = 25; // Process in batches to avoid memory issues
+        int processedCount = 0;
+
         foreach (var player in sportsDataIoPlayers)
         {
             cancellationToken.ThrowIfCancellationRequested();
             await AddPlayerToDatabaseAsync(player, cancellationToken);
+            processedCount++;
+
+            // Save changes in batches
+            if (processedCount % batchSize == 0)
+            {
+                await _context.SaveChangesAsync(cancellationToken);
+                _logger.LogInformation($"Saved batch of {batchSize} players. Total processed: {processedCount}");
+            }
+        }
+
+        // Save any remaining changes
+        if (processedCount % batchSize != 0)
+        {
+            await _context.SaveChangesAsync(cancellationToken);
+            _logger.LogInformation($"Saved final batch. Total players processed: {processedCount}");
         }
 
         var ds = await _context.DataStatus.FirstOrDefaultAsync(d => d.DataSource == "SportsDataIO", cancellationToken);
-        if (ds != null)
+        if (ds == null)
         {
-            ds.LastUpdated = DateTime.Now.ToLocalTime();
-            _context.DataStatus.Update(ds);
+            ds = new Models.DataStatus { DataSource = "SportsDataIO" };
+            _context.DataStatus.Add(ds);
         }
+
+        ds.LastUpdated = DateTime.UtcNow;
         await _context.SaveChangesAsync(cancellationToken);
 
         _logger.LogInformation("Done with SportsDataIo Data update.");
@@ -74,9 +94,10 @@ public sealed class SportsDataIoPlayersWorker
 
             if (!string.IsNullOrEmpty(ioPlayer.TeamAbbreviation))
             {
+                Console.WriteLine($"Team Abbreviation: {ioPlayer.TeamAbbreviation}");
                 ioPlayer.PlayerTeam = await _context.Teams.FirstOrDefaultAsync(t => t.Abbreviation == ioPlayer.TeamAbbreviation, cancellationToken);
             }
-            ioPlayer.LastUpdated = DateTime.Now.ToLocalTime();
+            ioPlayer.LastUpdated = DateTime.UtcNow;
 
             await _context.SportsDataIoPlayers.AddAsync(ioPlayer, cancellationToken);
 
@@ -106,7 +127,7 @@ public sealed class SportsDataIoPlayersWorker
             {
                 player.PlayerTeam = null;
             }
-            player.LastUpdated = DateTime.Now.ToLocalTime();
+            player.LastUpdated = DateTime.UtcNow;
             _context.SportsDataIoPlayers.Update(player);
 
             return player;

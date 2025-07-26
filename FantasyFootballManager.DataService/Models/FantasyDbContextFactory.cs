@@ -10,9 +10,9 @@ public class FantasyDbContextFactory : IDesignTimeDbContextFactory<FantasyDbCont
         var optionsBuilder = new DbContextOptionsBuilder<FantasyDbContext>();
 
         // Use your connection string here, or read from environment variable
-        var connectionString = Environment.GetEnvironmentVariable("sqlConnectionString");
+        var connectionString = Environment.GetEnvironmentVariable("postgresConnectionString");
 
-        optionsBuilder.UseSqlServer(connectionString);
+        optionsBuilder.UseNpgsql(connectionString);
 
         return new FantasyDbContext(optionsBuilder.Options);
     }

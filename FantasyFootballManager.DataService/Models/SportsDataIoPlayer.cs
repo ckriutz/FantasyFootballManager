@@ -10,13 +10,13 @@ public class SportsDataIoPlayer
     public int Id { get; set; }
 
     [JsonPropertyName("FantasyPlayerKey")]
-    public string FantasyPlayerKey { get; set; }
+    public string FantasyPlayerKey { get; set; } = string.Empty;
 
     [JsonPropertyName("PlayerID")]
     public int PlayerID { get; set; }
 
     [JsonPropertyName("Name")]
-    public string Name { get; set; }
+    public string Name { get; set; } = string.Empty;
 
     [NotMapped]
     [JsonPropertyName("Team")]
@@ -25,7 +25,7 @@ public class SportsDataIoPlayer
     public Team? PlayerTeam { get; set; }
 
     [JsonPropertyName("Position")]
-    public string Position { get; set; }
+    public string Position { get; set; } = string.Empty;
 
     [JsonPropertyName("AverageDraftPosition")]
     public double? AverageDraftPosition { get; set; }
@@ -60,5 +60,5 @@ public class SportsDataIoPlayer
     [JsonPropertyName("AverageDraftPosition2QB")]
     public double? AverageDraftPosition2QB { get; set; }
 
-    public DateTime LastUpdated { get; set; } = DateTime.Now;
+    public DateTime LastUpdated { get; set; } = DateTime.UtcNow;
 }

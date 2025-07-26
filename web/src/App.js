@@ -2,6 +2,8 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Home from "./Pages/Home";
 import Players from "./Pages/Players";
 import Player from "./Pages/Player";
+import Profile from "./Pages/Profile";
+import Status from "./Pages/Status";
 
 function App() {
   return (
@@ -13,6 +15,8 @@ function App() {
         </Route>
         <Route path="players" element={<Players />} />
         <Route path="player/:id" element={<Player />} />
+        <Route path="profile" element={<Profile />} />
+        <Route path="status" element={<Status />} />
       </Routes>
     </BrowserRouter>
   );

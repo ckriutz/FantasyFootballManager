@@ -43,7 +43,7 @@ public class SleeperPlayer
 
     [NotMapped]
     [JsonPropertyName("fantasy_positions")]
-    public List<string> FantasyPositions { get; set; }
+    public List<string> FantasyPositions { get; set; } = new();
 
     [JsonPropertyName("search_full_name")]
     public string? SearchFullName { get; set; }

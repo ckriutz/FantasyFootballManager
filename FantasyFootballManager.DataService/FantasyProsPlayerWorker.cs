@@ -48,6 +48,9 @@ public sealed class FantasyProsPlayerWorker
             return;
         }
 
+        int batchSize = 25; // Process in batches to avoid memory issues
+        int processedCount = 0;
+
         foreach (var player in fantasyProsPlayers.Players)
         {
             cancellationToken.ThrowIfCancellationRequested();
@@ -58,17 +61,34 @@ public sealed class FantasyProsPlayerWorker
                 continue;
             }
             await AddPlayerToDatabaseAsync(player, cancellationToken);
+            processedCount++;
+
+            // Save changes in batches
+            if (processedCount % batchSize == 0)
+            {
+                await _context.SaveChangesAsync(cancellationToken);
+                _logger.LogInformation($"Saved batch of {batchSize} players. Total processed: {processedCount}");
+            }
+        }
+
+        // Save any remaining changes
+        if (processedCount % batchSize != 0)
+        {
+            await _context.SaveChangesAsync(cancellationToken);
+            _logger.LogInformation($"Saved final batch. Total players processed: {processedCount}");
         }
         
         var ds = await _context.DataStatus.FirstOrDefaultAsync(d => d.DataSource == "FantasyPros", cancellationToken);
-        if (ds != null)
+        if (ds == null)
         {
-            ds.LastUpdated = DateTime.Now;
-            _context.DataStatus.Update(ds);
+            ds = new Models.DataStatus { DataSource = "FantasyPros" };
+            _context.DataStatus.Add(ds);
         }
+
+        ds.LastUpdated = DateTime.UtcNow;
         await _context.SaveChangesAsync(cancellationToken);
 
-        _logger.LogInformation("Done with data update. Going to wait for 1 day.");
+        _logger.LogInformation("Done with data update.");
         return;
     }
 
@@ -84,7 +104,8 @@ public sealed class FantasyProsPlayerWorker
 
             if (!String.IsNullOrEmpty(prosPlayer.PlayerTeamId))
             {
-                if(prosPlayer.PlayerTeamId == "JAC")
+                Console.WriteLine($"Team Abbreviation: {prosPlayer.PlayerTeamId}");
+                if (prosPlayer.PlayerTeamId == "JAC")
                     prosPlayer.PlayerTeamId = "JAX";
                 existingPlayer.Team = await _context.Teams.FirstOrDefaultAsync(t => t.Abbreviation == prosPlayer.PlayerTeamId, cancellationToken);
             }
@@ -114,7 +135,7 @@ public sealed class FantasyProsPlayerWorker
             existingPlayer.RankStd = prosPlayer.RankStd;
             existingPlayer.PosRank = prosPlayer.PosRank;
             existingPlayer.Tier = prosPlayer.Tier;
-            existingPlayer.LastUpdated = DateTime.Now.ToLocalTime();
+            existingPlayer.LastUpdated = DateTime.UtcNow;
 
             try
             {
@@ -137,22 +158,19 @@ public sealed class FantasyProsPlayerWorker
                     prosPlayer.PlayerTeamId = "JAX";
                 prosPlayer.PlayerYahooPositions = String.IsNullOrEmpty(prosPlayer.PlayerYahooPositions) ? "UNK" : prosPlayer.PlayerYahooPositions;
                 prosPlayer.Team = await _context.Teams.FirstOrDefaultAsync(t => t.Abbreviation == prosPlayer.PlayerTeamId, cancellationToken);
-                prosPlayer.LastUpdated = DateTime.Now.ToLocalTime();
+                prosPlayer.LastUpdated = DateTime.UtcNow;
             }
 
             try
             {
-                //await _context.FantasyProsPlayers.AddAsync(prosPlayer, cancellationToken);
-                //await _context.SaveChangesAsync(cancellationToken);
                 _context.FantasyProsPlayers.Add(prosPlayer);
-                _context.SaveChanges();
             }
             catch (Exception ex)
             {
                 _logger.LogError($"Error adding player {prosPlayer.PlayerName} to database. {ex.Message}");
                 _logger.LogError(ex.InnerException?.Message);
                 _logger.LogError(prosPlayer.ToString());
-                return null;
+                return prosPlayer; // Return the player even if there was an error staging it
             }
 
             return prosPlayer;

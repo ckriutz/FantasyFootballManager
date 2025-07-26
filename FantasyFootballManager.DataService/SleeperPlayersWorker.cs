@@ -48,6 +48,9 @@ public sealed class SleeperPlayersWorker
             return;
         }
 
+        int batchSize = 100; // Process in batches to avoid memory issues
+        int processedCount = 0;
+
         foreach (var player in sleeperPlayersDictionary)
         {
             cancellationToken.ThrowIfCancellationRequested();
@@ -56,16 +59,32 @@ public sealed class SleeperPlayersWorker
                 continue;
 
             await AddPlayerToDatabaseAsync(player.Value, cancellationToken);
+            processedCount++;
+
+            // Save changes in batches
+            if (processedCount % batchSize == 0)
+            {
+                await _context.SaveChangesAsync(cancellationToken);
+                _logger.LogInformation($"Saved batch of {batchSize} players. Total processed: {processedCount}");
+            }
+        }
+
+        // Save any remaining changes
+        if (processedCount % batchSize != 0)
+        {
+            await _context.SaveChangesAsync(cancellationToken);
+            _logger.LogInformation($"Saved final batch. Total players processed: {processedCount}");
         }
 
         // Update DataStatus once after all players are processed
         var ds = await _context.DataStatus.FirstOrDefaultAsync(d => d.DataSource == "Sleeper", cancellationToken);
-        if (ds != null)
+        if (ds == null)
         {
-            ds.LastUpdated = DateTime.Now.ToLocalTime();
-            _context.DataStatus.Update(ds);
+            ds = new Models.DataStatus { DataSource = "Sleeper" };
+            _context.DataStatus.Add(ds);
         }
 
+        ds.LastUpdated = DateTime.UtcNow;
         await _context.SaveChangesAsync(cancellationToken);
         _logger.LogInformation("Done with data update.");
     }
@@ -82,12 +101,41 @@ public sealed class SleeperPlayersWorker
             _logger.LogInformation($"Removing player: {player.PlayerId}");
             _context.SleeperPlayers.Remove(player);
         }
+
+        if (players.Count > 0)
+        {
+            await _context.SaveChangesAsync(cancellationToken);
+            _logger.LogInformation($"Removed {players.Count} duplicate players");
+        }
+    }
+
+    private static void NormalizeDateTimesToUtc(Models.SleeperPlayer player)
+    {
+        // Convert all DateTime properties to UTC to satisfy PostgreSQL requirements
+        if (player.Birthdate.HasValue && player.Birthdate.Value.Kind == DateTimeKind.Unspecified)
+        {
+            player.Birthdate = DateTime.SpecifyKind(player.Birthdate.Value, DateTimeKind.Utc);
+        }
+        
+        if (player.injuryStartDate.HasValue && player.injuryStartDate.Value.Kind == DateTimeKind.Unspecified)
+        {
+            player.injuryStartDate = DateTime.SpecifyKind(player.injuryStartDate.Value, DateTimeKind.Utc);
+        }
+        
+        // LastUpdated should already be UTC from DateTime.UtcNow, but let's ensure it
+        if (player.LastUpdated.Kind == DateTimeKind.Unspecified)
+        {
+            player.LastUpdated = DateTime.SpecifyKind(player.LastUpdated, DateTimeKind.Utc);
+        }
     }
 
     private async Task<Models.SleeperPlayer?> AddPlayerToDatabaseAsync(Models.SleeperPlayer sleeperPlayer, CancellationToken cancellationToken)
     {
         if (sleeperPlayer.FullName == "Duplicate Player")
             return null;
+
+        // Normalize DateTime properties to UTC for PostgreSQL compatibility
+        NormalizeDateTimesToUtc(sleeperPlayer);
 
         var existingPlayer = await _context.SleeperPlayers
             .Include("Team")
@@ -114,6 +162,12 @@ public sealed class SleeperPlayersWorker
             existingPlayer.Age = sleeperPlayer.Age;
             existingPlayer.College = sleeperPlayer.College;
 
+            // Copy DateTime properties with proper UTC handling
+            if (sleeperPlayer.Birthdate.HasValue)
+                existingPlayer.Birthdate = sleeperPlayer.Birthdate;
+            if (sleeperPlayer.injuryStartDate.HasValue)
+                existingPlayer.injuryStartDate = sleeperPlayer.injuryStartDate;
+
             // OKay, do players who are 'Inactive' probably don't have a team, so we need to see if it's null first.
             if (!String.IsNullOrEmpty(sleeperPlayer.TeamAbbreviation))
             {
@@ -127,13 +181,12 @@ public sealed class SleeperPlayersWorker
 
 
             existingPlayer.SearchRank = sleeperPlayer.SearchRank;
-            existingPlayer.injuryStartDate = sleeperPlayer.injuryStartDate;
             existingPlayer.InjuryStatus = sleeperPlayer.InjuryStatus;
             existingPlayer.IsActive = sleeperPlayer.IsActive;
             existingPlayer.SwishId = sleeperPlayer.SwishId;
             existingPlayer.InjuryNotes  = sleeperPlayer.InjuryNotes;
             existingPlayer.SportRadarId = sleeperPlayer.SportRadarId;
-            existingPlayer.LastUpdated = DateTime.Now;
+            existingPlayer.LastUpdated = DateTime.UtcNow;
 
             _context.SleeperPlayers.Update(existingPlayer);
 
@@ -143,8 +196,11 @@ public sealed class SleeperPlayersWorker
 
         if (!String.IsNullOrEmpty(sleeperPlayer.TeamAbbreviation))
         {       
-            sleeperPlayer.Team = _context.Teams.FirstOrDefault(t => t.Abbreviation == sleeperPlayer.TeamAbbreviation);
+            sleeperPlayer.Team = await _context.Teams.FirstOrDefaultAsync(t => t.Abbreviation == sleeperPlayer.TeamAbbreviation, cancellationToken);
         }
+
+        // Ensure LastUpdated is set to UTC
+        sleeperPlayer.LastUpdated = DateTime.UtcNow;
  
         _context.SleeperPlayers.Add(sleeperPlayer);
 

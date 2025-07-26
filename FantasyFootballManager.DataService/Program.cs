@@ -5,10 +5,10 @@ using Microsoft.EntityFrameworkCore;
 using FantasyFootballManager.DataService.Models;
 using FantasyFootballManager.DataService;
 
-var sqlConnectionString = Environment.GetEnvironmentVariable("sqlConnectionString");
-if (string.IsNullOrWhiteSpace(sqlConnectionString))
+var postgresConnectionString = Environment.GetEnvironmentVariable("postgresConnectionString");
+if (string.IsNullOrWhiteSpace(postgresConnectionString))
 {
-    Console.WriteLine("ERROR: sqlConnectionString environment variable is not set.");
+    Console.WriteLine("ERROR: postgresConnectionString environment variable is not set.");
     return;
 }
 
@@ -18,7 +18,7 @@ var host = Host.CreateDefaultBuilder(args)
     .ConfigureServices((context, services) =>
     {
         services.AddDbContext<FantasyDbContext>(options =>
-            options.UseSqlServer(sqlConnectionString), ServiceLifetime.Transient);
+            options.UseNpgsql(postgresConnectionString), ServiceLifetime.Transient);
 
         services.AddLogging(configure => configure.AddConsole());
 
@@ -42,6 +42,8 @@ try
 
     var fantasyProsPlayerWorker = scope.ServiceProvider.GetRequiredService<FantasyProsPlayerWorker>();
     await fantasyProsPlayerWorker.RunAsync(cancellationToken);
+
+    Console.WriteLine("All workers completed successfully.");
 }
 catch (Exception ex)
 {

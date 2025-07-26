@@ -3,17 +3,17 @@ using System;
 using FantasyFootballManager.DataService.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
-using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
+using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 #nullable disable
 
 namespace FantasyFootballManager.DataService.Migrations
 {
     [DbContext(typeof(FantasyDbContext))]
-    [Migration("20250517233328_InitialCreate")]
-    partial class InitialCreate
+    [Migration("20250725180153_InitialPostgreSQLMigration")]
+    partial class InitialPostgreSQLMigration
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -21,165 +21,219 @@ namespace FantasyFootballManager.DataService.Migrations
 #pragma warning disable 612, 618
             modelBuilder
                 .HasAnnotation("ProductVersion", "8.0.6")
-                .HasAnnotation("Relational:MaxIdentifierLength", 128);
+                .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
-            SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
+            NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
             modelBuilder.Entity("FantasyFootballManager.DataService.Models.DataStatus", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
                     b.Property<string>("DataSource")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
 
                     b.Property<DateTime>("LastUpdated")
-                        .HasColumnType("datetime2");
+                        .HasColumnType("timestamp with time zone");
 
                     b.HasKey("Id");
 
                     b.ToTable("DataStatus");
                 });
 
+            modelBuilder.Entity("FantasyFootballManager.DataService.Models.FantasyActivity", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<bool>("IsDraftedOnMyTeam")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("IsDraftedOnOtherTeam")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("IsThumbsDown")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("IsThumbsUp")
+                        .HasColumnType("boolean");
+
+                    b.Property<int>("PlayerId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("User")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("FantasyActivities");
+                });
+
             modelBuilder.Entity("FantasyFootballManager.DataService.Models.FantasyProsPlayer", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
                     b.Property<string>("CbsPlayerId")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
                         .HasAnnotation("Relational:JsonPropertyName", "cbs_player_id");
 
                     b.Property<DateTime>("LastUpdated")
-                        .HasColumnType("datetime2");
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("PlayerByeWeek")
-                        .HasColumnType("nvarchar(max)")
+                        .HasMaxLength(5)
+                        .HasColumnType("character varying(5)")
                         .HasAnnotation("Relational:JsonPropertyName", "player_bye_week");
 
                     b.Property<string>("PlayerEligibility")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
                         .HasAnnotation("Relational:JsonPropertyName", "player_eligibility");
 
                     b.Property<string>("PlayerFilename")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
                         .HasAnnotation("Relational:JsonPropertyName", "player_filename");
 
                     b.Property<int>("PlayerId")
-                        .HasColumnType("int")
+                        .HasColumnType("integer")
                         .HasAnnotation("Relational:JsonPropertyName", "player_id");
 
                     b.Property<string>("PlayerImageUrl")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
                         .HasAnnotation("Relational:JsonPropertyName", "player_image_url");
 
                     b.Property<string>("PlayerName")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
                         .HasAnnotation("Relational:JsonPropertyName", "player_name");
 
                     b.Property<double>("PlayerOwnedAvg")
-                        .HasColumnType("float")
+                        .HasColumnType("double precision")
                         .HasAnnotation("Relational:JsonPropertyName", "player_owned_avg");
 
                     b.Property<double>("PlayerOwnedEspn")
-                        .HasColumnType("float")
+                        .HasColumnType("double precision")
                         .HasAnnotation("Relational:JsonPropertyName", "player_owned_espn");
 
                     b.Property<int>("PlayerOwnedYahoo")
-                        .HasColumnType("int")
+                        .HasColumnType("integer")
                         .HasAnnotation("Relational:JsonPropertyName", "player_owned_yahoo");
 
                     b.Property<string>("PlayerPageUrl")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
                         .HasAnnotation("Relational:JsonPropertyName", "player_page_url");
 
                     b.Property<string>("PlayerPositionId")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)")
+                        .HasMaxLength(5)
+                        .HasColumnType("character varying(5)")
                         .HasAnnotation("Relational:JsonPropertyName", "player_position_id");
 
                     b.Property<string>("PlayerPositions")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)")
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
                         .HasAnnotation("Relational:JsonPropertyName", "player_positions");
 
                     b.Property<string>("PlayerShortName")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
                         .HasAnnotation("Relational:JsonPropertyName", "player_short_name");
 
                     b.Property<string>("PlayerSquareImageUrl")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
                         .HasAnnotation("Relational:JsonPropertyName", "player_square_image_url");
 
                     b.Property<string>("PlayerTeamId")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)")
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)")
                         .HasAnnotation("Relational:JsonPropertyName", "player_team_id");
 
                     b.Property<string>("PlayerYahooId")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
                         .HasAnnotation("Relational:JsonPropertyName", "player_yahoo_id");
 
                     b.Property<string>("PlayerYahooPositions")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)")
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
                         .HasAnnotation("Relational:JsonPropertyName", "player_yahoo_positions");
 
                     b.Property<string>("PosRank")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)")
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)")
                         .HasAnnotation("Relational:JsonPropertyName", "pos_rank");
 
                     b.Property<string>("RankAve")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)")
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)")
                         .HasAnnotation("Relational:JsonPropertyName", "rank_ave");
 
                     b.Property<int>("RankEcr")
-                        .HasColumnType("int")
+                        .HasColumnType("integer")
                         .HasAnnotation("Relational:JsonPropertyName", "rank_ecr");
 
                     b.Property<string>("RankMax")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)")
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)")
                         .HasAnnotation("Relational:JsonPropertyName", "rank_max");
 
                     b.Property<string>("RankMin")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)")
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)")
                         .HasAnnotation("Relational:JsonPropertyName", "rank_min");
 
                     b.Property<string>("RankStd")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)")
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)")
                         .HasAnnotation("Relational:JsonPropertyName", "rank_std");
 
                     b.Property<string>("SportsdataId")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
                         .HasAnnotation("Relational:JsonPropertyName", "sportsdata_id");
 
                     b.Property<int>("TeamId")
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
                     b.Property<int>("Tier")
-                        .HasColumnType("int")
+                        .HasColumnType("integer")
                         .HasAnnotation("Relational:JsonPropertyName", "tier");
 
                     b.HasKey("Id");
@@ -192,153 +246,174 @@ namespace FantasyFootballManager.DataService.Migrations
             modelBuilder.Entity("FantasyFootballManager.DataService.Models.SleeperPlayer", b =>
                 {
                     b.Property<string>("PlayerId")
-                        .HasColumnType("nvarchar(450)")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
                         .HasAnnotation("Relational:JsonPropertyName", "player_id");
 
                     b.Property<int?>("Age")
-                        .HasColumnType("int")
+                        .HasColumnType("integer")
                         .HasAnnotation("Relational:JsonPropertyName", "age");
 
                     b.Property<string>("BirthCountry")
-                        .HasColumnType("nvarchar(max)")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
                         .HasAnnotation("Relational:JsonPropertyName", "birth_country");
 
                     b.Property<DateTime?>("Birthdate")
-                        .HasColumnType("datetime2")
+                        .HasColumnType("timestamp with time zone")
                         .HasAnnotation("Relational:JsonPropertyName", "birth_date");
 
                     b.Property<string>("College")
-                        .HasColumnType("nvarchar(max)")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
                         .HasAnnotation("Relational:JsonPropertyName", "college");
 
                     b.Property<int?>("DepthChartOrder")
-                        .HasColumnType("int")
+                        .HasColumnType("integer")
                         .HasAnnotation("Relational:JsonPropertyName", "depth_chart_order");
 
                     b.Property<string>("DepthChartPosition")
-                        .HasColumnType("nvarchar(max)")
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)")
                         .HasAnnotation("Relational:JsonPropertyName", "depth_chart_position");
 
                     b.Property<int?>("EspnId")
-                        .HasColumnType("int")
+                        .HasColumnType("integer")
                         .HasAnnotation("Relational:JsonPropertyName", "espn_id");
 
                     b.Property<int?>("FantasyDataId")
-                        .HasColumnType("int")
+                        .HasColumnType("integer")
                         .HasAnnotation("Relational:JsonPropertyName", "fantasy_data_id");
 
                     b.Property<string>("FirstName")
-                        .HasColumnType("nvarchar(max)")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
                         .HasAnnotation("Relational:JsonPropertyName", "first_name");
 
                     b.Property<string>("FullName")
-                        .HasColumnType("nvarchar(max)")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
                         .HasAnnotation("Relational:JsonPropertyName", "full_name");
 
                     b.Property<string>("GsisId")
-                        .HasColumnType("nvarchar(max)")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
                         .HasAnnotation("Relational:JsonPropertyName", "gsis_id");
 
                     b.Property<string>("Hashtag")
-                        .HasColumnType("nvarchar(max)")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
                         .HasAnnotation("Relational:JsonPropertyName", "hashtag");
 
                     b.Property<string>("Height")
-                        .HasColumnType("nvarchar(max)")
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)")
                         .HasAnnotation("Relational:JsonPropertyName", "height");
 
                     b.Property<string>("HighSchool")
-                        .HasColumnType("nvarchar(max)")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
                         .HasAnnotation("Relational:JsonPropertyName", "high_school");
 
                     b.Property<string>("InjuryBodyPart")
-                        .HasColumnType("nvarchar(max)")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
                         .HasAnnotation("Relational:JsonPropertyName", "injury_body_part");
 
                     b.Property<string>("InjuryNotes")
-                        .HasColumnType("nvarchar(max)")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
                         .HasAnnotation("Relational:JsonPropertyName", "injury_notes");
 
                     b.Property<string>("InjuryStatus")
-                        .HasColumnType("nvarchar(max)")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
                         .HasAnnotation("Relational:JsonPropertyName", "injury_status");
 
                     b.Property<bool>("IsActive")
-                        .HasColumnType("bit")
+                        .HasColumnType("boolean")
                         .HasAnnotation("Relational:JsonPropertyName", "active");
 
                     b.Property<string>("LastName")
-                        .HasColumnType("nvarchar(max)")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
                         .HasAnnotation("Relational:JsonPropertyName", "last_name");
 
                     b.Property<DateTime>("LastUpdated")
-                        .HasColumnType("datetime2");
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<long?>("NewsUpdated")
                         .HasColumnType("bigint")
                         .HasAnnotation("Relational:JsonPropertyName", "news_updated");
 
                     b.Property<int?>("Number")
-                        .HasColumnType("int")
+                        .HasColumnType("integer")
                         .HasAnnotation("Relational:JsonPropertyName", "number");
 
                     b.Property<string>("Position")
-                        .HasColumnType("nvarchar(max)")
+                        .HasMaxLength(5)
+                        .HasColumnType("character varying(5)")
                         .HasAnnotation("Relational:JsonPropertyName", "position");
 
                     b.Property<int?>("RotowireId")
-                        .HasColumnType("int")
+                        .HasColumnType("integer")
                         .HasAnnotation("Relational:JsonPropertyName", "rotowire_id");
 
                     b.Property<int?>("RotoworldId")
-                        .HasColumnType("int")
+                        .HasColumnType("integer")
                         .HasAnnotation("Relational:JsonPropertyName", "rotoworld_id");
 
                     b.Property<string>("SearchFirstName")
-                        .HasColumnType("nvarchar(max)")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
                         .HasAnnotation("Relational:JsonPropertyName", "search_first_name");
 
                     b.Property<string>("SearchFullName")
-                        .HasColumnType("nvarchar(max)")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
                         .HasAnnotation("Relational:JsonPropertyName", "search_full_name");
 
                     b.Property<string>("SearchLastName")
-                        .HasColumnType("nvarchar(max)")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
                         .HasAnnotation("Relational:JsonPropertyName", "search_last_name");
 
                     b.Property<int?>("SearchRank")
-                        .HasColumnType("int")
+                        .HasColumnType("integer")
                         .HasAnnotation("Relational:JsonPropertyName", "search_rank");
 
                     b.Property<string>("SportRadarId")
-                        .HasColumnType("nvarchar(max)")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
                         .HasAnnotation("Relational:JsonPropertyName", "sportradar_id");
 
                     b.Property<int?>("StatsId")
-                        .HasColumnType("int")
+                        .HasColumnType("integer")
                         .HasAnnotation("Relational:JsonPropertyName", "stats_id");
 
                     b.Property<string>("Status")
-                        .HasColumnType("nvarchar(max)")
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
                         .HasAnnotation("Relational:JsonPropertyName", "status");
 
                     b.Property<int?>("SwishId")
-                        .HasColumnType("int")
+                        .HasColumnType("integer")
                         .HasAnnotation("Relational:JsonPropertyName", "swish_id");
 
                     b.Property<int?>("TeamId")
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
                     b.Property<string>("Weight")
-                        .HasColumnType("nvarchar(max)")
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)")
                         .HasAnnotation("Relational:JsonPropertyName", "weight");
 
                     b.Property<int?>("YahooId")
-                        .HasColumnType("int")
+                        .HasColumnType("integer")
                         .HasAnnotation("Relational:JsonPropertyName", "yahoo_id");
 
                     b.Property<int?>("YearsExp")
-                        .HasColumnType("int")
+                        .HasColumnType("integer")
                         .HasAnnotation("Relational:JsonPropertyName", "years_exp");
 
                     b.HasKey("PlayerId");
@@ -352,77 +427,80 @@ namespace FantasyFootballManager.DataService.Migrations
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
                     b.Property<double?>("AuctionValue")
-                        .HasColumnType("float")
+                        .HasColumnType("double precision")
                         .HasAnnotation("Relational:JsonPropertyName", "AuctionValue");
 
                     b.Property<double?>("AuctionValuePPR")
-                        .HasColumnType("float")
+                        .HasColumnType("double precision")
                         .HasAnnotation("Relational:JsonPropertyName", "AuctionValuePPR");
 
                     b.Property<double?>("AverageDraftPosition")
-                        .HasColumnType("float")
+                        .HasColumnType("double precision")
                         .HasAnnotation("Relational:JsonPropertyName", "AverageDraftPosition");
 
                     b.Property<double?>("AverageDraftPosition2QB")
-                        .HasColumnType("float")
+                        .HasColumnType("double precision")
                         .HasAnnotation("Relational:JsonPropertyName", "AverageDraftPosition2QB");
 
                     b.Property<double?>("AverageDraftPositionDynasty")
-                        .HasColumnType("float")
+                        .HasColumnType("double precision")
                         .HasAnnotation("Relational:JsonPropertyName", "AverageDraftPositionDynasty");
 
                     b.Property<double?>("AverageDraftPositionIDP")
-                        .HasColumnType("float")
+                        .HasColumnType("double precision")
                         .HasAnnotation("Relational:JsonPropertyName", "AverageDraftPositionIDP");
 
                     b.Property<double?>("AverageDraftPositionPPR")
-                        .HasColumnType("float")
+                        .HasColumnType("double precision")
                         .HasAnnotation("Relational:JsonPropertyName", "AverageDraftPositionPPR");
 
                     b.Property<double?>("AverageDraftPositionRookie")
-                        .HasColumnType("float")
+                        .HasColumnType("double precision")
                         .HasAnnotation("Relational:JsonPropertyName", "AverageDraftPositionRookie");
 
                     b.Property<int?>("ByeWeek")
-                        .HasColumnType("int")
+                        .HasColumnType("integer")
                         .HasAnnotation("Relational:JsonPropertyName", "ByeWeek");
 
                     b.Property<string>("FantasyPlayerKey")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
                         .HasAnnotation("Relational:JsonPropertyName", "FantasyPlayerKey");
 
                     b.Property<double?>("LastSeasonFantasyPoints")
-                        .HasColumnType("float")
+                        .HasColumnType("double precision")
                         .HasAnnotation("Relational:JsonPropertyName", "LastSeasonFantasyPoints");
 
                     b.Property<DateTime>("LastUpdated")
-                        .HasColumnType("datetime2");
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("Name")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
                         .HasAnnotation("Relational:JsonPropertyName", "Name");
 
                     b.Property<int>("PlayerID")
-                        .HasColumnType("int")
+                        .HasColumnType("integer")
                         .HasAnnotation("Relational:JsonPropertyName", "PlayerID");
 
                     b.Property<int?>("PlayerTeamId")
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
                     b.Property<string>("Position")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)")
+                        .HasMaxLength(5)
+                        .HasColumnType("character varying(5)")
                         .HasAnnotation("Relational:JsonPropertyName", "Position");
 
                     b.Property<double?>("ProjectedFantasyPoints")
-                        .HasColumnType("float")
+                        .HasColumnType("double precision")
                         .HasAnnotation("Relational:JsonPropertyName", "ProjectedFantasyPoints");
 
                     b.HasKey("Id");
@@ -436,17 +514,19 @@ namespace FantasyFootballManager.DataService.Migrations
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
                     b.Property<string>("Abbreviation")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)");
 
                     b.Property<string>("Name")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
 
                     b.HasKey("Id");
 

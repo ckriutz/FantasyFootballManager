@@ -2,11 +2,13 @@ import os
 from dotenv import load_dotenv
 from fastapi import FastAPI, Depends
 from fastapi.middleware.cors import CORSMiddleware
-from sqlalchemy import Column, create_engine, URL, select
+from sqlalchemy import Column, create_engine, update, select, insert
 from sqlalchemy.orm import sessionmaker, Session
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import String, Integer, Boolean, DateTime, BigInteger, Text, Select
 import logging
+from sqlalchemy.exc import SQLAlchemyError
+from fastapi import HTTPException
 
 print("FastAPI up and running!")
 
@@ -145,6 +147,22 @@ class Team(Base):
     Name = Column(Text, nullable=False)
     Abbreviation = Column(Text, nullable=False)
 
+class DataStatus(Base):
+    __tablename__ = "DataStatus"
+    Id = Column(Integer, primary_key=True, autoincrement=True, nullable=False)
+    DataSource = Column(Text, nullable=False)
+    LastUpdated = Column(DateTime, nullable=False)
+
+class FantasyActivities(Base):
+    __tablename__ = "FantasyActivities"
+    Id = Column(Integer, primary_key=True, autoincrement=True, nullable=False)
+    User = Column(Text, nullable=False)
+    PlayerId = Column(Integer, nullable=False)
+    IsThumbsUp = Column(Boolean, nullable=False)
+    IsThumbsDown = Column(Boolean, nullable=False)
+    IsDraftedOnMyTeam = Column(Boolean, nullable=False)
+    IsDraftedOnOtherTeam = Column(Boolean, nullable=False)
+
 # Dependency for FastAPI routes
 def get_db():
     db: Session = SessionLocal()
@@ -183,6 +201,65 @@ def get_players(db: Session = Depends(get_db)):
 
     return formatted_results
 
+@app.get("/user-players/{user}")
+def get_user_players(user: str, db: Session = Depends(get_db)):
+    query = select(
+        FantasyProsPlayers.PlayerName,
+        FantasyProsPlayers.PlayerId,
+        FantasyProsPlayers.PlayerByeWeek,
+        FantasyProsPlayers.PlayerOwnedAvg,
+        FantasyProsPlayers.PlayerPositionId,
+        FantasyProsPlayers.PlayerImageUrl,
+        FantasyProsPlayers.Tier,
+        FantasyProsPlayers.RankEcr,
+        FantasyProsPlayers.LastUpdated,
+        FantasyProsPlayers.TeamId,
+        Team.Name,
+        FantasyActivities.IsThumbsUp,
+        FantasyActivities.IsThumbsDown,
+        FantasyActivities.IsDraftedOnMyTeam,
+        FantasyActivities.IsDraftedOnOtherTeam).join(Team, FantasyProsPlayers.TeamId == Team.Id).join(FantasyActivities, (FantasyActivities.PlayerId == FantasyProsPlayers.PlayerId) & (FantasyActivities.User == user), isouter=True).order_by(FantasyProsPlayers.RankEcr)
+    results = db.execute(query).all()
+
+    # Convert tuples to dictionaries
+    keys = [
+        "PlayerName", "PlayerId", "PlayerByeWeek", "PlayerOwnedAvg", "PlayerPositionId", 
+        "PlayerImageUrl", "Tier", "RankEcr", "LastUpdated", "TeamId", "TeamName", 
+        "IsThumbsUp", "IsThumbsDown", "IsDraftedOnMyTeam", "IsDraftedOnOtherTeam"
+    ]
+    formatted_results = [dict(zip(keys, row)) for row in results]
+
+    return formatted_results
+
+@app.get("/my-players/{user}")
+def get_my_players(user: str, db: Session = Depends(get_db)):
+    query = select(
+        FantasyProsPlayers.PlayerName,
+        FantasyProsPlayers.PlayerId,
+        FantasyProsPlayers.PlayerByeWeek,
+        FantasyProsPlayers.PlayerOwnedAvg,
+        FantasyProsPlayers.PlayerPositionId,
+        FantasyProsPlayers.PlayerImageUrl,
+        FantasyProsPlayers.Tier,
+        FantasyProsPlayers.RankEcr,
+        FantasyProsPlayers.LastUpdated,
+        FantasyProsPlayers.TeamId,
+        Team.Name,
+        FantasyActivities.IsThumbsUp,
+        FantasyActivities.IsThumbsDown,
+        FantasyActivities.IsDraftedOnMyTeam,
+        FantasyActivities.IsDraftedOnOtherTeam).where(FantasyActivities.User == user, FantasyActivities.IsDraftedOnMyTeam == True).join(Team, FantasyProsPlayers.TeamId == Team.Id).join(FantasyActivities, (FantasyActivities.PlayerId == FantasyProsPlayers.PlayerId) & (FantasyActivities.User == user)).order_by(FantasyProsPlayers.RankEcr)
+    results = db.execute(query).all()
+
+    # Convert tuples to dictionaries
+    keys = [
+        "PlayerName", "PlayerId", "PlayerByeWeek", "PlayerOwnedAvg", "PlayerPositionId", 
+        "PlayerImageUrl", "Tier", "RankEcr", "LastUpdated", "TeamId", "TeamName", 
+        "IsThumbsUp", "IsThumbsDown", "IsDraftedOnMyTeam", "IsDraftedOnOtherTeam"
+    ]
+    formatted_results = [dict(zip(keys, row)) for row in results]
+
+    return formatted_results
 
 @app.get("/player/{player_id}")
 def get_player(player_id: int, db: Session = Depends(get_db)):
@@ -234,5 +311,273 @@ def get_fantasypros_players(db: Session = Depends(get_db)):
     results = db.execute(query).scalars().all()
     return results
 
-logging.basicConfig()
-logging.getLogger("sqlalchemy.engine").setLevel(logging.INFO)
+@app.get('/datastatuses')
+def get_datastatuses(db: Session = Depends(get_db)):
+    query = select(DataStatus)
+    results = db.execute(query).scalars().all()
+    return results
+
+@app.get('/fantasyactivities/{user}')
+def get_fantasy_activities(user: str, db: Session = Depends(get_db)):
+    query = select(FantasyActivities).where(FantasyActivities.User == user)
+    results = db.execute(query).scalars().all()
+    return results
+
+@app.post('/player/claim/{player_id}')
+def claim_player(player_id: int, user: str, db: Session = Depends(get_db)):
+    # First, check if there is an existing record for this player and user.
+    existing_fantasy_activity = db.execute(
+        select(FantasyActivities).where(
+            FantasyActivities.PlayerId == player_id,
+            FantasyActivities.User == user
+        )
+    ).scalars().first()
+
+    if existing_fantasy_activity:
+        # Update existing record
+        query = (
+            update(FantasyActivities)
+            .where(FantasyActivities.Id == existing_fantasy_activity.Id)
+            .values(
+                IsThumbsUp=False,
+                IsThumbsDown=False,
+                IsDraftedOnMyTeam=True,
+                IsDraftedOnOtherTeam=False
+            )
+            .returning(
+                FantasyActivities.Id,
+                FantasyActivities.User,
+                FantasyActivities.PlayerId,
+                FantasyActivities.IsThumbsUp,
+                FantasyActivities.IsThumbsDown,
+                FantasyActivities.IsDraftedOnMyTeam,
+                FantasyActivities.IsDraftedOnOtherTeam
+            )
+        )
+    else:
+        # Insert the new record and return the inserted row
+        query = insert(FantasyActivities).values(
+            User=user,
+            PlayerId=player_id,
+            IsThumbsUp=False,
+            IsThumbsDown=False,
+            IsDraftedOnMyTeam=True,
+            IsDraftedOnOtherTeam=False
+        ).returning(
+            FantasyActivities.Id,
+            FantasyActivities.User,
+            FantasyActivities.PlayerId,
+            FantasyActivities.IsThumbsUp,
+            FantasyActivities.IsThumbsDown,
+            FantasyActivities.IsDraftedOnMyTeam,
+            FantasyActivities.IsDraftedOnOtherTeam
+        )
+    result = db.execute(query).first()
+    db.commit()
+
+    # Return the inserted record as a dictionary
+    return result._asdict() if result else {"error": "Failed to claim player"}
+    
+@app.post('/player/notclaimed/{player_id}')
+def reset_player(player_id: int, user: str, db: Session = Depends(get_db)):
+    existing_fantasy_activity = db.execute(
+        select(FantasyActivities).where(
+            FantasyActivities.PlayerId == player_id,
+            FantasyActivities.User == user
+        )
+    ).scalars().first()
+
+    if existing_fantasy_activity:
+        # Update existing record
+        query = (
+            update(FantasyActivities)
+            .where(FantasyActivities.Id == existing_fantasy_activity.Id)
+            .values(
+                IsDraftedOnMyTeam=False,
+                IsDraftedOnOtherTeam=True
+            )
+        ).returning(
+            FantasyActivities.Id,
+            FantasyActivities.User,
+            FantasyActivities.PlayerId,
+            FantasyActivities.IsThumbsUp,
+            FantasyActivities.IsThumbsDown,
+            FantasyActivities.IsDraftedOnMyTeam,
+            FantasyActivities.IsDraftedOnOtherTeam
+        )
+    else:
+        query = insert(FantasyActivities).values(
+            User=user,
+            PlayerId=player_id,
+            IsThumbsUp=False,
+            IsThumbsDown=False,
+            IsDraftedOnMyTeam=False,
+            IsDraftedOnOtherTeam=True
+        ).returning(
+        FantasyActivities.Id,
+        FantasyActivities.User,
+        FantasyActivities.PlayerId,
+        FantasyActivities.IsThumbsUp,
+        FantasyActivities.IsThumbsDown,
+        FantasyActivities.IsDraftedOnMyTeam,
+        FantasyActivities.IsDraftedOnOtherTeam
+    )
+    result = db.execute(query).first()
+    db.commit()
+    # Return the inserted record as a dictionary
+    return result._asdict() if result else {"error": "Failed to claim player"}
+
+@app.post('/player/resetstatus/{player_id}')
+def not_claim_player(player_id: int, user: str, db: Session = Depends(get_db)):
+    existing_fantasy_activity = db.execute(
+        select(FantasyActivities).where(
+            FantasyActivities.PlayerId == player_id,
+            FantasyActivities.User == user
+        )
+    ).scalars().first()
+
+    if existing_fantasy_activity:
+        # Update existing record
+        query = (
+            update(FantasyActivities)
+            .where(FantasyActivities.Id == existing_fantasy_activity.Id)
+            .values(
+                IsDraftedOnMyTeam=False,
+                IsDraftedOnOtherTeam=False
+            )
+        ).returning(
+            FantasyActivities.Id,
+            FantasyActivities.User,
+            FantasyActivities.PlayerId,
+            FantasyActivities.IsThumbsUp,
+            FantasyActivities.IsThumbsDown,
+            FantasyActivities.IsDraftedOnMyTeam,
+            FantasyActivities.IsDraftedOnOtherTeam
+        )
+    else:
+        query = insert(FantasyActivities).values(
+            User=user,
+            PlayerId=player_id,
+            IsThumbsUp=False,
+            IsThumbsDown=False,
+            IsDraftedOnMyTeam=False,
+            IsDraftedOnOtherTeam=False
+        ).returning(
+        FantasyActivities.Id,
+        FantasyActivities.User,
+        FantasyActivities.PlayerId,
+        FantasyActivities.IsThumbsUp,
+        FantasyActivities.IsThumbsDown,
+        FantasyActivities.IsDraftedOnMyTeam,
+        FantasyActivities.IsDraftedOnOtherTeam
+    )
+    result = db.execute(query).first()
+    db.commit()
+    # Return the inserted record as a dictionary
+    return result._asdict() if result else {"error": "Failed to reset player"}
+
+@app.post('/player/thumbsup/{player_id}')
+def thumbs_up_player(player_id: int, user: str, db: Session = Depends(get_db)):
+    existing_fantasy_activity = db.execute(
+        select(FantasyActivities).where(
+            FantasyActivities.PlayerId == player_id,
+            FantasyActivities.User == user
+        )
+    ).scalars().first()
+
+    if existing_fantasy_activity:
+        # Okay, so a record exists, and thumbsUp is already true, lets set it to false.
+        th = True
+        if existing_fantasy_activity.IsThumbsUp: # type: ignore
+            th = False
+
+        # Update existing record
+        query = (
+            update(FantasyActivities)
+            .where(FantasyActivities.Id == existing_fantasy_activity.Id)
+            .values(
+                IsThumbsUp=th,
+                IsThumbsDown=False
+            )
+        ).returning(
+            FantasyActivities.Id,
+            FantasyActivities.User,
+            FantasyActivities.PlayerId,
+            FantasyActivities.IsThumbsUp,
+            FantasyActivities.IsThumbsDown,
+            FantasyActivities.IsDraftedOnMyTeam,
+            FantasyActivities.IsDraftedOnOtherTeam
+        )
+    else:
+        query = insert(FantasyActivities).values(
+            User=user,
+            PlayerId=player_id,
+            IsThumbsUp=True,
+            IsThumbsDown=False,
+            IsDraftedOnMyTeam=False,
+            IsDraftedOnOtherTeam=False
+        ).returning(
+        FantasyActivities.Id,
+        FantasyActivities.User,
+        FantasyActivities.PlayerId,
+        FantasyActivities.IsThumbsUp,
+        FantasyActivities.IsThumbsDown,
+        FantasyActivities.IsDraftedOnMyTeam,
+        FantasyActivities.IsDraftedOnOtherTeam
+    )
+    result = db.execute(query).first()
+    db.commit()
+    # Return the inserted record as a dictionary
+    return result._asdict() if result else {"error": "Failed to thumbs up player"}
+
+@app.post('/player/thumbsdown/{player_id}')
+def thumbs_down_player(player_id: int, user: str, db: Session = Depends(get_db)):
+    existing_fantasy_activity = db.execute(
+        select(FantasyActivities).where(
+            FantasyActivities.PlayerId == player_id,
+            FantasyActivities.User == user
+        )
+    ).scalars().first()
+
+    if existing_fantasy_activity:
+        # Update existing record
+        td = True
+        if existing_fantasy_activity.IsThumbsDown: # type: ignore
+            td = False
+        query = (
+            update(FantasyActivities)
+            .where(FantasyActivities.Id == existing_fantasy_activity.Id)
+            .values(
+                IsThumbsUp=False,
+                IsThumbsDown=True
+            )
+        ).returning(
+            FantasyActivities.Id,
+            FantasyActivities.User,
+            FantasyActivities.PlayerId,
+            FantasyActivities.IsThumbsUp,
+            FantasyActivities.IsThumbsDown,
+            FantasyActivities.IsDraftedOnMyTeam,
+            FantasyActivities.IsDraftedOnOtherTeam
+        )
+    else:
+        query = insert(FantasyActivities).values(
+            User=user,
+            PlayerId=player_id,
+            IsThumbsUp=False,
+            IsThumbsDown=True,
+            IsDraftedOnMyTeam=False,
+            IsDraftedOnOtherTeam=False
+        ).returning(
+        FantasyActivities.Id,
+        FantasyActivities.User,
+        FantasyActivities.PlayerId,
+        FantasyActivities.IsThumbsUp,
+        FantasyActivities.IsThumbsDown,
+        FantasyActivities.IsDraftedOnMyTeam,
+        FantasyActivities.IsDraftedOnOtherTeam
+    )
+    result = db.execute(query).first()
+    db.commit()
+    # Return the inserted record as a dictionary
+    return result._asdict() if result else {"error": "Failed to thumbs down player"}
