@@ -12,7 +12,7 @@ if (string.IsNullOrWhiteSpace(postgresConnectionString))
     return;
 }
 
-Console.WriteLine($"Starting Data Service version 1.2.0");
+Console.WriteLine($"Starting Data Service version 1.3.0");
 
 var host = Host.CreateDefaultBuilder(args)
     .ConfigureServices((context, services) =>
@@ -26,27 +26,10 @@ var host = Host.CreateDefaultBuilder(args)
         services.AddTransient<SleeperPlayersWorker>();
         services.AddTransient<SportsDataIoPlayersWorker>();
         services.AddTransient<FantasyProsPlayerWorker>();
+
+        // Register the worker scheduler service
+        services.AddHostedService<WorkerSchedulerService>();
     })
     .Build();
 
-using var scope = host.Services.CreateScope();
-var cancellationToken = new CancellationTokenSource().Token;
-
-try
-{
-    var sleeperPlayersWorker = scope.ServiceProvider.GetRequiredService<SleeperPlayersWorker>();
-    await sleeperPlayersWorker.RunAsync(cancellationToken);
-
-    var sportsDataIoPlayersWorker = scope.ServiceProvider.GetRequiredService<SportsDataIoPlayersWorker>();
-    await sportsDataIoPlayersWorker.RunAsync(cancellationToken);
-
-    var fantasyProsPlayerWorker = scope.ServiceProvider.GetRequiredService<FantasyProsPlayerWorker>();
-    await fantasyProsPlayerWorker.RunAsync(cancellationToken);
-
-    Console.WriteLine("All workers completed successfully.");
-}
-catch (Exception ex)
-{
-    var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
-    logger.LogError(ex, "Unhandled exception occurred during worker execution.");
-}
+await host.RunAsync();
