@@ -6,9 +6,12 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
-var sqlConnectionString = Environment.GetEnvironmentVariable("sqlConnectionString");
-
-Console.WriteLine($"SQL Connection String: {sqlConnectionString}");
+var postgresConnectionString = Environment.GetEnvironmentVariable("postgresConnectionString");
+if (string.IsNullOrWhiteSpace(postgresConnectionString))
+{
+    Console.WriteLine("ERROR: postgresConnectionString environment variable is not set.");
+    return;
+}
 
 var builder = WebApplication.CreateBuilder(args);
 var MyAllowSpecificOrigins = "_myAllowSpecificOrigins";
@@ -17,13 +20,13 @@ var MyAllowSpecificOrigins = "_myAllowSpecificOrigins";
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
-builder.Services.AddDbContext<FantasyDbContext>(options => options.UseSqlServer(sqlConnectionString),ServiceLifetime.Transient);
+builder.Services.AddDbContext<FantasyDbContext>(options => options.UseNpgsql(postgresConnectionString), ServiceLifetime.Transient);
 
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy(name: MyAllowSpecificOrigins, policy  =>
+    options.AddPolicy(name: MyAllowSpecificOrigins, policy =>
     {
-        policy.WithOrigins("http://localhost:3000", "https://ffootball.system-k.io", "http://ffootball.system-k.io", "http://192.168.40.13:3000")
+        policy.WithOrigins("http://localhost:3000", "https://ffootball.caseyk.dev", "http://ffootball.caseyk.dev", "http://192.168.40.13:3000")
         .AllowAnyMethod()
         .AllowAnyHeader();
     });
@@ -46,71 +49,212 @@ app.UseCors(MyAllowSpecificOrigins);
 using var scope = app.Services.CreateScope();
 using var dbContext = scope.ServiceProvider.GetRequiredService<FantasyDbContext>();
 
-app.MapGet("/version", () => "1.1.5");
+app.MapGet("/version", () => "1.5.0");
 
-app.MapGet("/datastatus", () => 
-{ 
+app.MapGet("/datastatus", () =>
+{
     var dataStatus = dbContext.DataStatus.ToArray();
     return dataStatus;
 }).RequireCors(MyAllowSpecificOrigins);
 
-// Get a single player by SleeperId
-app.MapGet("/fantasyplayer/{sleeperId}", (string sleeperId) => 
+app.MapGet("/echo/{message}", (string message) =>
 {
-    Console.WriteLine($"Getting player {sleeperId} from the database.");
-    
-    var combinedQuery = from sleeper in dbContext.SleeperPlayers where sleeper.PlayerId == sleeperId
-    join fantasy in dbContext.FantasyPlayers on sleeper.PlayerId equals fantasy.PlayerId
-    join sportsdata in dbContext.SportsDataIoPlayers on sleeper.FullName equals sportsdata.Name
-    join pros in dbContext.FantasyProsPlayers on sleeper.SportRadarId equals pros.SportsdataId
-    select new 
-    {
-        sleeper,
-        fantasy,
-        sportsdata,
-        pros,
-        Team = sleeper.Team
-    };
-
-    return combinedQuery.FirstOrDefault();
-    
+    Console.WriteLine($"Echoing message: {message}");
+    return $"Echo: {message}";
 });
 
-// Get all the players using Redis.OM
-app.MapGet("/simplefantasyplayers", () => 
+// Get all players with comprehensive details
+app.MapGet("/players", () =>
+{
+    Console.WriteLine("Getting all players with comprehensive details.");
+
+    var combinedQuery = from sleeper in dbContext.SleeperPlayers
+                        join sportsdata in dbContext.SportsDataIoPlayers on sleeper.FullName equals sportsdata.Name
+                        join pros in dbContext.FantasyProsPlayers on sleeper.SportRadarId equals pros.SportsdataId
+                        select new
+                        {
+                            SleeperData = new
+                            {
+                                PlayerId = sleeper.PlayerId,
+                                FullName = sleeper.FullName,
+                                Position = sleeper.Position,
+                                TeamAbbreviation = sleeper.TeamAbbreviation,
+                                DepthChartOrder = sleeper.DepthChartOrder,
+                                SearchRank = sleeper.SearchRank,
+                                Status = sleeper.Status,
+                                Age = sleeper.Age,
+                                Height = sleeper.Height,
+                                Weight = sleeper.Weight,
+                                YearsExp = sleeper.YearsExp,
+                                College = sleeper.College,
+                                InjuryStatus = sleeper.InjuryStatus,
+                                InjuryNotes = sleeper.InjuryNotes
+                            },
+                            SportsDataIo = sportsdata,
+                            FantasyPros = pros,
+                            Team = sleeper.Team
+                        };
+
+    return combinedQuery.Where(x => x.SleeperData.SearchRank != 9999999)
+                       .OrderBy(x => x.SleeperData.SearchRank)
+                       .ToList();
+});
+
+// Get all players from the database with selected fields
+app.MapGet("/players/simple", () =>
 {
     Console.WriteLine($"Getting all players from database with selected fields.");
 
     var combinedQuery = from sleeper in dbContext.SleeperPlayers
-    join fantasy in dbContext.FantasyPlayers on sleeper.PlayerId equals fantasy.PlayerId
-    join sportsdata in dbContext.SportsDataIoPlayers on sleeper.FullName equals sportsdata.Name
-    join pros in dbContext.FantasyProsPlayers on sleeper.SportRadarId equals pros.SportsdataId
-    select new 
-    {
-        SleeperId = sleeper.PlayerId,
-        Name = sleeper.FullName,
-        Position = sleeper.Position,
-        Depth = sleeper.DepthChartOrder,
-        ByeWeek = pros.PlayerByeWeek,
-        FantasyPlayer = fantasy,
-        Rank = pros.RankEcr,
-        AdpPpr = sportsdata.AverageDraftPositionPPR,
-        ProjPoints = sportsdata.ProjectedFantasyPoints,
-        LastSeasonProjPoints = sportsdata.LastSeasonFantasyPoints,
-        SearchRank = sleeper.SearchRank,
-        RankEcr = pros.RankEcr,
-        Team = sleeper.Team // Assuming there's a navigation property from SleeperPlayers to Teams
-    };
+                        join sportsdata in dbContext.SportsDataIoPlayers on sleeper.FullName equals sportsdata.Name
+                        join pros in dbContext.FantasyProsPlayers on sleeper.SportRadarId equals pros.SportsdataId
+                        select new
+                        {
+                            SleeperId = sleeper.PlayerId,
+                            Name = sleeper.FullName,
+                            Position = sleeper.Position,
+                            Depth = sleeper.DepthChartOrder,
+                            ByeWeek = pros.PlayerByeWeek,
+                            Rank = pros.RankEcr,
+                            AdpPpr = sportsdata.AverageDraftPositionPPR,
+                            ProjPoints = sportsdata.ProjectedFantasyPoints,
+                            LastSeasonProjPoints = sportsdata.LastSeasonFantasyPoints,
+                            SearchRank = sleeper.SearchRank,
+                            RankEcr = pros.RankEcr,
+                            Team = sleeper.Team
+                        };
 
     return combinedQuery.Where(x => x.SearchRank != 9999999).OrderBy(x => x.SearchRank).ToList();
 });
 
-app.MapGet("/fantasyplayers/search/position/{position}", (string position) => 
+app.MapGet("/players/simple/{sub}", (string sub) =>
 {
-    Console.WriteLine($"Getting all players from the database with the position {position}.");
+    Console.WriteLine($"Getting all players from database with selected fields for user {sub}.");
+
+    var combinedQuery = dbContext.SleeperPlayers
+        .Join(dbContext.SportsDataIoPlayers, 
+              sleeper => sleeper.FullName, 
+              sportsdata => sportsdata.Name, 
+              (sleeper, sportsdata) => new { sleeper, sportsdata })
+        .Join(dbContext.FantasyProsPlayers,
+              combined => combined.sleeper.SportRadarId,
+              pros => pros.SportsdataId,
+              (combined, pros) => new { combined.sleeper, combined.sportsdata, pros })
+        .GroupJoin(dbContext.FantasyActivities.Where(a => a.User == sub),
+                   combined => combined.sleeper.PlayerId,
+                   activity => activity.PlayerId.ToString(),
+                   (combined, activities) => new { combined, activities })
+        .SelectMany(x => x.activities.DefaultIfEmpty(),
+                   (combined, activity) => new
+                   {
+                       SleeperId = combined.combined.sleeper.PlayerId,
+                       Name = combined.combined.sleeper.FullName,
+                       Position = combined.combined.sleeper.Position,
+                       Depth = combined.combined.sleeper.DepthChartOrder,
+                       ByeWeek = combined.combined.pros.PlayerByeWeek,
+                       Rank = combined.combined.pros.RankEcr,
+                       AdpPpr = combined.combined.sportsdata.AverageDraftPositionPPR,
+                       ProjPoints = combined.combined.sportsdata.ProjectedFantasyPoints,
+                       LastSeasonProjPoints = combined.combined.sportsdata.LastSeasonFantasyPoints,
+                       SearchRank = combined.combined.sleeper.SearchRank,
+                       RankEcr = combined.combined.pros.RankEcr,
+                       Team = combined.combined.sleeper.Team,
+                       // FantasyActivity fields with default values
+                       IsThumbsUp = activity != null && activity.IsThumbsUp,
+                       IsThumbsDown = activity != null && activity.IsThumbsDown,
+                       IsDraftedOnMyTeam = activity != null && activity.IsDraftedOnMyTeam,
+                       IsDraftedOnOtherTeam = activity != null && activity.IsDraftedOnOtherTeam,
+                       ActivityUser = activity != null ? activity.User : null
+                   })
+        .Where(x => x.SearchRank != 9999999)
+        .OrderBy(x => x.SearchRank);
+
+    return combinedQuery.ToList();
+});
+
+// Get a single player by SleeperId
+app.MapGet("/players/{sleeperId}", (string sleeperId) =>
+{
+    Console.WriteLine($"Getting player {sleeperId} from the database.");
+
+    var combinedQuery = from sleeper in dbContext.SleeperPlayers
+                        where sleeper.PlayerId == sleeperId
+                        join sportsdata in dbContext.SportsDataIoPlayers on sleeper.FullName equals sportsdata.Name
+                        join pros in dbContext.FantasyProsPlayers on sleeper.SportRadarId equals pros.SportsdataId
+                        select new
+                        {
+                            SleeperData = new
+                            {
+                                PlayerId = sleeper.PlayerId,
+                                FullName = sleeper.FullName,
+                                Position = sleeper.Position,
+                                TeamAbbreviation = sleeper.TeamAbbreviation,
+                                DepthChartOrder = sleeper.DepthChartOrder,
+                                SearchRank = sleeper.SearchRank,
+                                Status = sleeper.Status,
+                                Age = sleeper.Age,
+                                Height = sleeper.Height,
+                                Weight = sleeper.Weight,
+                                YearsExp = sleeper.YearsExp,
+                                College = sleeper.College
+                            },
+                            SportsDataIo = sportsdata,
+                            FantasyPros = pros,
+                            Team = sleeper.Team
+                        };
+
+    return combinedQuery.FirstOrDefault();
+
+});
+
+app.MapGet("/players/{sleeperId}/activity/{sub}", (string sleeperId, string sub) =>
+{
+    Console.WriteLine($"Getting player {sleeperId} activity for user {sub}.");
+
+    var combinedQuery = from sleeper in dbContext.SleeperPlayers
+                        where sleeper.PlayerId == sleeperId
+                        join sportsdata in dbContext.SportsDataIoPlayers on sleeper.FullName equals sportsdata.Name
+                        join pros in dbContext.FantasyProsPlayers on sleeper.SportRadarId equals pros.SportsdataId
+                        join activity in dbContext.FantasyActivities.Where(a => a.User == sub) on sleeper.PlayerId equals activity.PlayerId.ToString() into activityGroup
+                        from activity in activityGroup.DefaultIfEmpty()
+                        select new
+                        {
+                            SleeperData = new
+                            {
+                                PlayerId = sleeper.PlayerId,
+                                FullName = sleeper.FullName,
+                                Position = sleeper.Position,
+                                TeamAbbreviation = sleeper.TeamAbbreviation,
+                                DepthChartOrder = sleeper.DepthChartOrder,
+                                SearchRank = sleeper.SearchRank,
+                                Status = sleeper.Status,
+                                Age = sleeper.Age,
+                                Height = sleeper.Height,
+                                Weight = sleeper.Weight,
+                                YearsExp = sleeper.YearsExp,
+                                College = sleeper.College
+                            },
+                            SportsDataIo = sportsdata,
+                            FantasyPros = pros,
+                            Team = sleeper.Team,
+                            // FantasyActivity fields with default values
+                            IsThumbsUp = activity != null && activity.IsThumbsUp,
+                            IsThumbsDown = activity != null && activity.IsThumbsDown,
+                            IsDraftedOnMyTeam = activity != null && activity.IsDraftedOnMyTeam,
+                            IsDraftedOnOtherTeam = activity != null && activity.IsDraftedOnOtherTeam,
+                            ActivityUser = activity != null ? activity.User : null
+                        };
+
+    return combinedQuery.FirstOrDefault();
+
+});
+
+// Get players by position
+app.MapGet("/players/position/{position}", (string position) => 
+{
+    Console.WriteLine($"Getting all players with position {position}.");
 
     var combinedQuery = from sleeper in dbContext.SleeperPlayers where sleeper.Position == position
-    join fantasy in dbContext.FantasyPlayers on sleeper.PlayerId equals fantasy.PlayerId
     join sportsdata in dbContext.SportsDataIoPlayers on sleeper.FullName equals sportsdata.Name
     join pros in dbContext.FantasyProsPlayers on sleeper.SportRadarId equals pros.SportsdataId
     select new 
@@ -120,163 +264,208 @@ app.MapGet("/fantasyplayers/search/position/{position}", (string position) =>
         Position = sleeper.Position,
         Depth = sleeper.DepthChartOrder,
         ByeWeek = pros.PlayerByeWeek,
-        FantasyPlayer = fantasy,
         Rank = pros.RankEcr,
         AdpPpr = sportsdata.AverageDraftPositionPPR,
         ProjPoints = sportsdata.ProjectedFantasyPoints,
         LastSeasonProjPoints = sportsdata.LastSeasonFantasyPoints,
         SearchRank = sleeper.SearchRank,
         RankEcr = pros.RankEcr,
-        Team = sleeper.Team // Assuming there's a navigation property from SleeperPlayers to Teams
+        Team = sleeper.Team
     };
 
     return combinedQuery.Where(x => x.SearchRank != 9999999).OrderBy(x => x.SearchRank).ToList();
 });
 
-app.MapGet("/rankedfantasyplayers", () => 
-{
-    Console.WriteLine($"Getting all ranked players from redis.");
-    //var players = fantasyplayers.Where(x => x.Tier > 0).ToList();
-});
+
+//app.MapGet("/rankedfantasyplayers", () => 
+//{
+//    Console.WriteLine($"Getting all ranked players from redis.");
+//var players = fantasyplayers.Where(x => x.Tier > 0).ToList();
+//});
 
 // Get my players from the database.
-app.MapGet("/myplayers", () => 
-{
-    Console.WriteLine($"Getting all my players from the database.");
-    // Get all the players from FantasyPlayers where IsOnMyTeam is true
-    var combinedQuery = from fantasy in dbContext.FantasyPlayers where fantasy.IsOnMyTeam == true
-    join sleeper in dbContext.SleeperPlayers on fantasy.PlayerId equals sleeper.PlayerId
-    join sportsdata in dbContext.SportsDataIoPlayers on sleeper.FullName equals sportsdata.Name
-    join pros in dbContext.FantasyProsPlayers on sleeper.SportRadarId equals pros.SportsdataId
-    select new 
-    {
-        sleeper,
-        fantasy,
-        sportsdata,
-        pros,
-        Team = sleeper.Team
-    };
-    return combinedQuery.ToList();
-    
-});
+//app.MapGet("/myplayers", () => 
+//{
+//    Console.WriteLine($"Getting all my players from the database.");
+//    // Get all the players from FantasyPlayers where IsOnMyTeam is true
+//    var combinedQuery = from fantasy in dbContext.FantasyPlayers where fantasy.IsOnMyTeam == true
+//    join sleeper in dbContext.SleeperPlayers on fantasy.PlayerId equals sleeper.PlayerId
+//    join sportsdata in dbContext.SportsDataIoPlayers on sleeper.FullName equals sportsdata.Name
+//    join pros in dbContext.FantasyProsPlayers on sleeper.SportRadarId equals pros.SportsdataId
+//    select new 
+//    {
+//        sleeper,
+//        fantasy,
+//        sportsdata,
+//        pros,
+//        Team = sleeper.Team
+//    };
+//    return combinedQuery.ToList();
+//    
+//});
 
-app.MapGet("/availableplayers", () => 
-{
-    Console.WriteLine($"Getting all available players.");
-    // Get all the players from FantasyPlayers where IsOnMyTeam is true
-    var combinedQuery = from fantasy in dbContext.FantasyPlayers where fantasy.IsTaken == false
-    join sleeper in dbContext.SleeperPlayers on fantasy.PlayerId equals sleeper.PlayerId
-    join sportsdata in dbContext.SportsDataIoPlayers on sleeper.FullName equals sportsdata.Name
-    join pros in dbContext.FantasyProsPlayers on sleeper.SportRadarId equals pros.SportsdataId
-    select new 
-    {
-        sleeper,
-        fantasy,
-        sportsdata,
-        pros,
-        Team = sleeper.Team
-    };
-    return combinedQuery.ToList();
-});
+//app.MapGet("/availableplayers", () => 
+//{
+//    Console.WriteLine($"Getting all available players.");
+//    // Get all the players from FantasyPlayers where IsOnMyTeam is true
+//    var combinedQuery = from fantasy in dbContext.FantasyPlayers where fantasy.IsTaken == false
+//    join sleeper in dbContext.SleeperPlayers on fantasy.PlayerId equals sleeper.PlayerId
+//    join sportsdata in dbContext.SportsDataIoPlayers on sleeper.FullName equals sportsdata.Name
+//    join pros in dbContext.FantasyProsPlayers on sleeper.SportRadarId equals pros.SportsdataId
+//    select new 
+//    {
+//        sleeper,
+//        fantasy,
+//        sportsdata,
+//        pros,
+//        Team = sleeper.Team
+//    };
+//    return combinedQuery.ToList();
+//});
 
 // Add a player to my team by updating the datbase.
-app.MapPost("/fantasyplayer/claim/{sleeperId}", (string sleeperId) => 
+app.MapPost("/players/{sleeperId}/draft/{sub}", (string sleeperId, string sub) =>
 {
-    Console.WriteLine($"Claiming player {sleeperId}.");
-    var player = dbContext.FantasyPlayers.Where(x => x.PlayerId == sleeperId).FirstOrDefault();
-    if(player == null)
+    Console.WriteLine($"Drafting player {sleeperId}.");
+    var player = dbContext.FantasyActivities.Where(x => x.PlayerId.ToString() == sleeperId && x.User == sub).FirstOrDefault();
+    if (player == null)
     {
-        return null;
+        player = new FantasyActivity
+        {
+            PlayerId = int.Parse(sleeperId),
+            User = sub,
+            IsThumbsUp = false,
+            IsThumbsDown = false,
+            IsDraftedOnMyTeam = true,
+            IsDraftedOnOtherTeam = false
+        };
+        dbContext.FantasyActivities.Add(player);
     }
-    player.IsOnMyTeam = true;
-    player.IsTaken = false;
-    dbContext.FantasyPlayers.Update(player);
+    else
+    {
+        player.IsDraftedOnMyTeam = true;
+        player.IsDraftedOnOtherTeam = false;
+        dbContext.FantasyActivities.Update(player);
+    }
+
+    
     dbContext.SaveChanges();
     return player;
 });
 
 // Assign a player to a team by updating the database.
-app.MapPost("/fantasyplayer/assign/{sleeperId}", (string sleeperId) => 
+app.MapPost("/players/{sleeperId}/assign/{sub}", (string sleeperId, string sub) =>
 {
-    Console.WriteLine($"Assigning player {sleeperId} to another team.");
-    var player = dbContext.FantasyPlayers.Where(x => x.PlayerId == sleeperId).FirstOrDefault();
-    if(player == null)
+    Console.WriteLine($"Assigning player {sleeperId}.");
+    var player = dbContext.FantasyActivities.Where(x => x.PlayerId.ToString() == sleeperId && x.User == sub).FirstOrDefault();
+    if (player == null)
     {
-        return null;
+        player = new FantasyActivity
+        {
+            PlayerId = int.Parse(sleeperId),
+            User = sub,
+            IsThumbsUp = false,
+            IsThumbsDown = false,
+            IsDraftedOnMyTeam = false,
+            IsDraftedOnOtherTeam = true
+        };
+        dbContext.FantasyActivities.Add(player);
     }
-    player.IsOnMyTeam = false;
-    player.IsTaken = true;
-    dbContext.FantasyPlayers.Update(player);
+    else
+    {
+        player.IsDraftedOnMyTeam = false;
+        player.IsDraftedOnOtherTeam = true;
+        dbContext.FantasyActivities.Update(player);
+    }
+
+    
     dbContext.SaveChanges();
     return player;
 });
 
 // reset a players status by updating the database.
-app.MapPost("/fantasyplayer/reset/{sleeperId}", (string sleeperId) => 
+app.MapPost("/players/{sleeperId}/reset/{sub}", (string sleeperId, string sub) =>
 {
     Console.WriteLine($"Resetting player {sleeperId}.");
-    var player = dbContext.FantasyPlayers.Where(x => x.PlayerId == sleeperId).FirstOrDefault();
-    if(player == null)
+    var player = dbContext.FantasyActivities.Where(x => x.PlayerId.ToString() == sleeperId && x.User == sub).FirstOrDefault();
+    if (player == null)
     {
-        return null;
+        player = new FantasyActivity
+        {
+            PlayerId = int.Parse(sleeperId),
+            User = sub,
+            IsThumbsUp = false,
+            IsThumbsDown = false,
+            IsDraftedOnMyTeam = false,
+            IsDraftedOnOtherTeam = false
+        };
+        dbContext.FantasyActivities.Add(player);
     }
-    player.IsOnMyTeam = false;
-    player.IsTaken = false;
-    dbContext.FantasyPlayers.Update(player);
+    else
+    {
+        player.IsDraftedOnMyTeam = false;
+        player.IsDraftedOnOtherTeam = false;
+        dbContext.FantasyActivities.Update(player);
+    }
+
+    
     dbContext.SaveChanges();
     return player;
 });
 
-// set a player to thumbs up
-app.MapPost("/fantasyplayer/thumbsup/{sleeperId}", (string sleeperId) => 
+// Set a player to thumbs up
+app.MapPost("/players/{sleeperId}/thumbsup/{sub}", (string sleeperId, string sub) => 
 {
-    Console.WriteLine($"Thumbs up player {sleeperId}.");
-    var player = dbContext.FantasyPlayers.Where(x => x.PlayerId == sleeperId).FirstOrDefault();
-    if(player == null)
+    Console.WriteLine($"Thumbs up player {sleeperId} for user {sub}.");
+    var player = dbContext.FantasyActivities.FirstOrDefault(x => x.PlayerId.ToString() == sleeperId && x.User == sub);
+    if (player == null)
     {
-        return null;
+        player = new FantasyActivity
+        {
+            PlayerId = int.Parse(sleeperId),
+            User = sub,
+            IsThumbsUp = true,
+            IsThumbsDown = false
+        };
+        dbContext.FantasyActivities.Add(player);
     }
-    player.IsThumbsUp = true;
-    player.IsThumbsDown = false;
-    dbContext.FantasyPlayers.Update(player);
+    else
+    {
+        player.IsThumbsUp = !player.IsThumbsUp;
+        player.IsThumbsDown = false;
+        dbContext.FantasyActivities.Update(player);
+    }
     dbContext.SaveChanges();
     return player;
 });
 
 // Set a player to thumbs down
-app.MapPost("/fantasyplayer/thumbsdown/{sleeperId}", (string sleeperId) => 
+app.MapPost("/players/{sleeperId}/thumbsdown/{sub}", (string sleeperId, string sub) => 
 {
-    Console.WriteLine($"Thumbs up player {sleeperId}.");
-    var player = dbContext.FantasyPlayers.Where(x => x.PlayerId == sleeperId).FirstOrDefault();
-    if(player == null)
+    Console.WriteLine($"Thumbs down player {sleeperId} for user {sub}.");
+    var player = dbContext.FantasyActivities.FirstOrDefault(x => x.PlayerId.ToString() == sleeperId && x.User == sub);
+    if (player == null)
     {
-        return null;
+        player = new FantasyActivity
+        {
+            PlayerId = int.Parse(sleeperId),
+            User = sub,
+            IsThumbsUp = false,
+            IsThumbsDown = true
+        };
+        dbContext.FantasyActivities.Add(player);
     }
-    player.IsThumbsUp = false;
-    player.IsThumbsDown = true;
-    dbContext.FantasyPlayers.Update(player);
+    else
+    {
+        player.IsThumbsUp = false;
+        player.IsThumbsDown = !player.IsThumbsDown;
+        dbContext.FantasyActivities.Update(player);
+    }
     dbContext.SaveChanges();
     return player;
 });
 
-// Set a player to no thumbs. This happens when we dont want thumbs up or down.
-app.MapPost("/fantasyplayer/nothumbs/{sleeperId}", (string sleeperId) => 
-{
-    Console.WriteLine($"Thumbs up player {sleeperId}.");
-    var player = dbContext.FantasyPlayers.Where(x => x.PlayerId == sleeperId).FirstOrDefault();
-    if(player == null)
-    {
-        return null;
-    }
-    player.IsThumbsUp = false;
-    player.IsThumbsDown = false;
-    dbContext.FantasyPlayers.Update(player);
-    dbContext.SaveChanges();
-    return player;
-});
-
-// Set the /health endpoint to return OK
-app.MapGet("/health", () => "OK");
+// When someone goes to the root of the API, return a welcome message.
+app.MapGet("/", () => "Welcome to the Fantasy Football Manager API!");
 
 app.Run();
-

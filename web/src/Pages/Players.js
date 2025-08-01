@@ -14,8 +14,8 @@ export default function Players() {
     useEffect(() => {
         console.log('User is authenticated:', user);
         if (isAuthenticated) {
-            console.log('http://127.0.0.1:8000/user-players/' + user.name);
-            fetch('http://127.0.0.1:8000/user-players/' + user.name)
+            console.log(`http://localhost:5180/players/simple/${user.sub}`);
+            fetch(`http://localhost:5180/players/simple/${user.sub}`)
                 .then((response) => {
                     if (!response.ok) {
                         throw new Error('Failed to fetch data');
@@ -28,7 +28,7 @@ export default function Players() {
                 })
                 .catch((error) => console.error('Error fetching player data:', error));
         }
-    }, [isAuthenticated]);
+    }, [isAuthenticated, user]);
 
     const handleFilterChange = (event) => {
         const position = event.target.value;
@@ -37,24 +37,26 @@ export default function Players() {
         if (position === 'All') {
             setFilteredPlayers(players);
         } else {
-            setFilteredPlayers(players.filter(player => player.PlayerPositionId.includes(position)));
+            setFilteredPlayers(players.filter(player => 
+                player && player.position && player.position.includes(position)
+            ));
         }
     };
 
-    const handleMarkAsMine = (playerId) => {
-        if (!user || !user.name) {
+    const handleDrafted = (playerId) => {
+        if (!user || !user.sub) {
             console.error("User information is missing.");
             return;
         }
-        console.log(`http://127.0.0.1:8000/player/claim/${playerId}?user=${user.name}`);
-        fetch(`http://127.0.0.1:8000/player/claim/${playerId}?user=${user.name}`, {
+        console.log(`/players/${playerId}/draft/${user.sub}`);
+        fetch(`http://localhost:5180/players/${playerId}/draft/${user.sub}`, {
 
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify({
-                user: user.name,
+                user: user.sub, // Use user.sub for the Auth0 user ID
             }),
         })
             .then((response) => {
@@ -68,11 +70,11 @@ export default function Players() {
             .then((data) => {
                 console.log('Player marked as mine:', data);
 
-                // Update the players array to set IsDraftedOnMyTeam to true
+                // Update the players array to set isDraftedOnMyTeam to true
                 setPlayers((prevPlayers) =>
                     prevPlayers.map((player) =>
-                        player.PlayerId === playerId
-                            ? { ...player, IsDraftedOnMyTeam: true }
+                        player.sleeperId === playerId
+                            ? { ...player, isDraftedOnMyTeam: true }
                             : player
                     )
                 );
@@ -80,8 +82,8 @@ export default function Players() {
                 // Optionally update filteredPlayers if needed
                 setFilteredPlayers((prevFilteredPlayers) =>
                     prevFilteredPlayers.map((player) =>
-                        player.PlayerId === playerId
-                            ? { ...player, IsDraftedOnMyTeam: true }
+                        player.sleeperId === playerId
+                            ? { ...player, isDraftedOnMyTeam: true }
                             : player
                     )
                 );
@@ -89,19 +91,19 @@ export default function Players() {
             .catch((error) => console.error('Error marking player as mine:', error));
     };
 
-    const handleMarkAsTaken = (playerId) => {
-        if (!user || !user.name) {
+    const handleAssigned = (playerId) => {
+        if (!user || !user.sub) {
             console.error("User information is missing.");
             return;
         }
 
-        fetch(`http://127.0.0.1:8000/player/notclaimed/${playerId}?user=${user.name}`, {
+        fetch(`http://localhost:5180/players/${playerId}/assign/${user.sub}`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify({
-                user: user.name,
+                user: user.sub, // Use user.sub for the Auth0 user ID
             }),
         })
             .then((response) => {
@@ -114,11 +116,11 @@ export default function Players() {
             .then((data) => {
                 console.log('Player marked as taken:', data);
 
-                // Update the players array to set IsDraftedOnOtherTeam to true
+                // Update the players array to set isDraftedOnOtherTeam to true
                 setPlayers((prevPlayers) =>
                     prevPlayers.map((player) =>
-                        player.PlayerId === playerId
-                            ? { ...player, IsDraftedOnOtherTeam: true }
+                        player.sleeperId === playerId
+                            ? { ...player, isDraftedOnOtherTeam: true }
                             : player
                     )
                 );
@@ -126,8 +128,8 @@ export default function Players() {
                 // Optionally update filteredPlayers if needed
                 setFilteredPlayers((prevFilteredPlayers) =>
                     prevFilteredPlayers.map((player) =>
-                        player.PlayerId === playerId
-                            ? { ...player, IsDraftedOnOtherTeam: true }
+                        player.sleeperId === playerId
+                            ? { ...player, isDraftedOnOtherTeam: true }
                             : player
                     )
                 );
@@ -136,18 +138,18 @@ export default function Players() {
     };
 
     const handleResetStatus = (playerId) => {
-        if (!user || !user.name) {
+        if (!user || !user.sub) {
             console.error("User information is missing.");
             return;
         }
 
-        fetch(`http://127.0.0.1:8000/player/resetstatus/${playerId}?user=${user.name}`, {
+        fetch(`http://localhost:5180/players/${playerId}/reset/${user.sub}`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify({
-                user: user.name,
+                user: user.sub,
             }),
         })
             .then((response) => {
@@ -160,11 +162,11 @@ export default function Players() {
             .then((data) => {
                 console.log('Player status reset:', data);
 
-                // Update the players array to reset IsDraftedOnMyTeam and IsDraftedOnOtherTeam
+                // Update the players array to reset isDraftedOnMyTeam and isDraftedOnOtherTeam
                 setPlayers((prevPlayers) =>
                     prevPlayers.map((player) =>
-                        player.PlayerId === playerId
-                            ? { ...player, IsDraftedOnMyTeam: false, IsDraftedOnOtherTeam: false }
+                        player.sleeperId === playerId
+                            ? { ...player, isDraftedOnMyTeam: false, isDraftedOnOtherTeam: false }
                             : player
                     )
                 );
@@ -172,8 +174,8 @@ export default function Players() {
                 // Optionally update filteredPlayers if needed
                 setFilteredPlayers((prevFilteredPlayers) =>
                     prevFilteredPlayers.map((player) =>
-                        player.PlayerId === playerId
-                            ? { ...player, IsDraftedOnMyTeam: false, IsDraftedOnOtherTeam: false }
+                        player.sleeperId === playerId
+                            ? { ...player, isDraftedOnMyTeam: false, isDraftedOnOtherTeam: false }
                             : player
                     )
                 );
@@ -187,8 +189,8 @@ export default function Players() {
             console.error("User information is missing.");
             return;
         }
-
-        fetch(`http://127.0.0.1:8000/player/thumbsup/${playerId}?user=${user.name}`, {
+        console.log(`http://localhost:5180/players/${playerId}/thumbsup/${user.sub}`);
+        fetch(`http://localhost:5180/players/${playerId}/thumbsup/${user.sub}`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -207,11 +209,11 @@ export default function Players() {
             .then((data) => {
                 console.log('Player thumbs-up:', data);
 
-                // Update the players array to reset IsThumbsUp and IsThumbsDown
+                // Update the players array to reset isThumbsUp and isThumbsDown
                 setPlayers((prevPlayers) =>
                     prevPlayers.map((player) =>
-                        player.PlayerId === playerId
-                            ? { ...player, IsThumbsUp: data.IsThumbsUp, IsThumbsDown: data.IsThumbsDown  }
+                        player.sleeperId === playerId
+                            ? { ...player, isThumbsUp: data.isThumbsUp, isThumbsDown: data.isThumbsDown  }
                             : player
                     )
                 );
@@ -219,8 +221,8 @@ export default function Players() {
                 // Optionally update filteredPlayers if needed
                 setFilteredPlayers((prevFilteredPlayers) =>
                     prevFilteredPlayers.map((player) =>
-                        player.PlayerId === playerId
-                            ? { ...player, IsThumbsUp: data.IsThumbsUp, IsThumbsDown: data.IsThumbsDown  }
+                        player.sleeperId === playerId
+                            ? { ...player, isThumbsUp: data.isThumbsUp, isThumbsDown: data.isThumbsDown  }
                             : player
                     )
                 );
@@ -235,7 +237,7 @@ export default function Players() {
             return;
         }
 
-        fetch(`http://127.0.0.1:8000/player/thumbsdown/${playerId}?user=${user.name}`, {
+        fetch(`http://localhost:5180/players/${playerId}/thumbsdown/${user.sub}`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -254,13 +256,13 @@ export default function Players() {
             .then((data) => {
                 console.log('Player thumbs-down:', data);
 
-                // Update the players array to reset IsThumbsUp and IsThumbsDown\
+                // Update the players array to reset isThumbsUp and isThumbsDown\
                 // Use thre values from the response
 
                 setPlayers((prevPlayers) =>
                     prevPlayers.map((player) =>
-                        player.PlayerId === playerId
-                            ? { ...player, IsThumbsUp: data.IsThumbsUp, IsThumbsDown: data.IsThumbsDown }
+                        player.sleeperId === playerId
+                            ? { ...player, isThumbsUp: data.isThumbsUp, isThumbsDown: data.isThumbsDown }
                             : player
                     )
                 );
@@ -268,8 +270,8 @@ export default function Players() {
                 // Optionally update filteredPlayers if needed
                 setFilteredPlayers((prevFilteredPlayers) =>
                     prevFilteredPlayers.map((player) =>
-                        player.PlayerId === playerId
-                            ? { ...player, IsThumbsUp: data.IsThumbsUp, IsThumbsDown: data.IsThumbsDown  }
+                        player.sleeperId === playerId
+                            ? { ...player, isThumbsUp: data.isThumbsUp, isThumbsDown: data.isThumbsDown  }
                             : player
                     )
                 );
@@ -303,8 +305,16 @@ export default function Players() {
 
     if (players.length === 0 || isLoading) {
         return (
-            <div className="flex items-center justify-center h-screen">
-                <p className="text-gray-500">Loading...</p>
+            <div className="page">
+                <Navbar />
+                <div className="flex items-center justify-center h-screen bg-gray-800">
+                    <div className="text-center space-y-4">
+                        <div className="flex justify-center">
+                            <div className="w-16 h-16 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+                        </div>
+                        <p className="text-white font-medium">Loading players...</p>
+                    </div>
+                </div>
             </div>
         );
     }
@@ -318,119 +328,136 @@ export default function Players() {
                         { label: 'Players', href: '/players' },
                     ]}
                 />
-                <div className="container mx-auto px-4 py-8">
-                    <h1 className="text-2xl font-bold text-gray-800 mb-4">Players</h1>
+                <div className="min-h-screen bg-gray-800 p-6">
+                    <div className="container mx-auto">
+                        <div className="text-center text-white space-y-4 mb-8">
+                            <h1 className="text-4xl font-bold">Players</h1>
+                            <p className="text-lg text-gray-300">
+                                Browse and manage your fantasy football players.
+                            </p>
+                        </div>
 
-                    {/* Filter Dropdown */}
-                    <div className="mb-4">
-                        <label htmlFor="position-filter" className="block text-gray-700 font-medium mb-2">Filter by Position:</label>
-                        <select
-                            id="position-filter"
-                            value={selectedPosition}
-                            onChange={handleFilterChange}
-                            className="border border-gray-300 rounded px-4 py-2 w-full md:w-1/3"
-                        >
-                            <option value="All">All</option>
-                            <option value="QB">Quarterback (QB)</option>
-                            <option value="RB">Running Back (RB)</option>
-                            <option value="WR">Wide Receiver (WR)</option>
-                            <option value="TE">Tight End (TE)</option>
-                            <option value="K">Kicker (K)</option>
-                            <option value="DEF">Defense (DEF)</option>
-                        </select>
-                    </div>
+                        {/* Filter Section */}
+                        <div className="bg-gray-700 rounded-lg p-6 mb-6">
+                            <div className="mb-4">
+                                <label htmlFor="position-filter" className="block text-white font-medium mb-2">Filter by Position:</label>
+                                <select
+                                    id="position-filter"
+                                    value={selectedPosition}
+                                    onChange={handleFilterChange}
+                                    className="bg-gray-600 border border-gray-500 rounded px-4 py-2 text-white w-full md:w-1/3 focus:outline-none focus:ring-2 focus:ring-blue-600"
+                                >
+                                    <option value="All">All</option>
+                                    <option value="QB">Quarterback (QB)</option>
+                                    <option value="RB">Running Back (RB)</option>
+                                    <option value="WR">Wide Receiver (WR)</option>
+                                    <option value="TE">Tight End (TE)</option>
+                                    <option value="K">Kicker (K)</option>
+                                    <option value="DEF">Defense (DEF)</option>
+                                </select>
+                            </div>
+                        </div>
 
-                    <div className="overflow-x-auto">
-                        <table className="min-w-full border-collapse border border-gray-300">
-                            <thead>
-                                <tr className="bg-gray-800 text-white">
-                                    <th></th>
-                                    <th className="border border-gray-300 px-4 py-2 text-left">Name</th>
-                                    <th className="border border-gray-300 px-4 py-2 text-left">Position</th>
-                                    <th className="border border-gray-300 px-4 py-2 text-left">Team</th>
-                                    <th className="border border-gray-300 px-4 py-2 text-left">Rank</th>
-                                    <th className="border border-gray-300 px-4 py-2 text-left">Bye</th>
-                                    <th></th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {filteredPlayers.map((player) => (
-                                    <tr
-                                        key={player.PlayerId}
-                                        className={`${player.IsDraftedOnMyTeam
-                                                ? 'bg-green-100' // Light green for players drafted on my team
-                                                : player.IsDraftedOnOtherTeam
-                                                    ? 'bg-red-100' // Light gray for players drafted on other teams
-                                                    : 'bg-white' // Default alternating row colors
-                                            }`}
-                                    >
-                                        <td className="border border-gray-300 px-4 py-2">
-    <div className="flex space-x-2">
-        {/* Show Thumbs Up unless IsThumbsDown is true */}
-        {!player.IsThumbsDown && (
-            <button
-                className="text-green-600 hover:text-green-700"
-                title="Thumbs Up"
-                onClick={() => handleThumbsUp(player.PlayerId)}
-            >
-                <span className="sr-only">Thumbs Up</span>
-                <TiThumbsUp className="text-xl" />
-            </button>
-        )}
-        {/* Show Thumbs Down unless IsThumbsUp is true */}
-        {!player.IsThumbsUp && (
-            <button
-                className="text-red-600 hover:text-red-700"
-                title="Thumbs Down"
-                onClick={() => handleThumbsDown(player.PlayerId)}
-            >
-                <span className="sr-only">Thumbs Down</span>
-                <TiThumbsDown className="text-xl" />
-            </button>
-        )}
-    </div>
-</td>
-                                        <td className="border border-gray-300 px-4 py-2 text-blue-600 hover:text-blue-700">
-                                            <Link to={`/player/${player.PlayerId}`}>{player.PlayerName}</Link>
-                                        </td>
-                                        <td className="border border-gray-300 px-4 py-2">{player.PlayerPositionId}</td>
-                                        <td className="border border-gray-300 px-4 py-2">{player.Name}</td>
-                                        <td className="border border-gray-300 px-4 py-2">{player.RankEcr}</td>
-                                        <td className="border border-gray-300 px-4 py-2">{player.PlayerByeWeek}</td>
-                                        <td className="border border-gray-300 px-4 py-2">
-                                            <div className="flex space-x-2">
-                                                {((player.IsDraftedOnMyTeam || player.IsDraftedOnOtherTeam) && (
-                                                    <button
-                                                        className="bg-green-600 hover:bg-green-700 text-white font-medium rounded px-3 py-1"
-                                                        title="Reset player status"
-                                                        onClick={() => handleResetStatus(player.PlayerId)}
-                                                    >
-                                                        Reset
-                                                    </button>
-                                                )) || (
-                                                        <>
+                        {/* Players Table */}
+                        <div className="bg-white rounded-lg shadow-lg overflow-hidden border border-gray-200">
+                            <div className="overflow-x-auto">
+                                <table className="min-w-full">
+                                    <thead>
+                                        <tr className="bg-gray-50 border-b border-gray-200">
+                                            <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                                            <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+                                            <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Position</th>
+                                            <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Team</th>
+                                            <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Rank</th>
+                                            <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Proj. Points</th>
+                                            <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Bye</th>
+                                            <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="bg-white divide-y divide-gray-200">
+                                        {filteredPlayers.map((player, index) => (
+                                            <tr
+                                                key={player.sleeperId}
+                                                className={`${
+                                                    player.isDraftedOnMyTeam
+                                                        ? 'bg-green-50 border-l-4 border-green-400' // Light green for players drafted on my team
+                                                        : player.isDraftedOnOtherTeam
+                                                        ? 'bg-red-50 border-l-4 border-red-400' // Light red for players drafted on other teams
+                                                        : 'bg-white hover:bg-gray-50' // Clean white background
+                                                } transition-colors`}
+                                            >
+                                                <td className="px-3 py-2 whitespace-nowrap">
+                                                    <div className="flex space-x-1">
+                                                        {/* Show Thumbs Up unless IsThumbsDown is true */}
+                                                        {!player.isThumbsDown && (
                                                             <button
-                                                                className="bg-blue-600 hover:bg-blue-700 text-white font-medium rounded px-3 py-1"
-                                                                title="Mark as drafted by you"
-                                                                onClick={() => handleMarkAsMine(player.PlayerId)}
+                                                                className="p-1 text-green-600 hover:text-green-700 hover:bg-green-100 rounded transition-colors cursor-pointer"
+                                                                title="Thumbs Up"
+                                                                onClick={() => handleThumbsUp(player.sleeperId)}
                                                             >
-                                                                Mine
+                                                                <span className="sr-only">Thumbs Up</span>
+                                                                <TiThumbsUp className="text-lg" />
                                                             </button>
+                                                        )}
+                                                        {/* Show Thumbs Down unless IsThumbsUp is true */}
+                                                        {!player.isThumbsUp && (
                                                             <button
-                                                                className="bg-gray-600 hover:bg-gray-700 text-white font-medium rounded px-3 py-1"
-                                                                title="Mark as drafted by someone else"
-                                                                onClick={() => handleMarkAsTaken(player.PlayerId)}
+                                                                className="p-1 text-red-600 hover:text-red-700 hover:bg-red-100 rounded transition-colors cursor-pointer"
+                                                                title="Thumbs Down"
+                                                                onClick={() => handleThumbsDown(player.sleeperId)}
                                                             >
-                                                                Taken
+                                                                <span className="sr-only">Thumbs Down</span>
+                                                                <TiThumbsDown className="text-lg" />
                                                             </button>
-                                                        </>
-                                                    )}
-                                            </div>
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
+                                                        )}
+                                                    </div>
+                                                </td>
+                                                <td className="px-3 py-2 whitespace-nowrap">
+                                                    <Link to={`/player/${player.sleeperId}`} className="text-blue-600 hover:text-blue-800 font-medium transition-colors">
+                                                        {player.name}
+                                                    </Link>
+                                                </td>
+                                                <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-600">{player.position}</td>
+                                                <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-600">{player.team?.abbreviation || 'N/A'}</td>
+                                                <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-600">{player.rankEcr || 'N/A'}</td>
+                                                <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-600">{player.projPoints || 'N/A'}</td>
+                                                <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-600">{player.byeWeek || 'N/A'}</td>
+                                                <td className="px-3 py-2 whitespace-nowrap">
+                                                    <div className="flex space-x-1">
+                                                        {((player.isDraftedOnMyTeam || player.isDraftedOnOtherTeam) && (
+                                                            <button
+                                                                className="inline-flex items-center px-2 py-1 border border-green-300 text-xs font-medium rounded text-green-700 bg-white hover:bg-green-50 transition-colors cursor-pointer"
+                                                                title="Reset player status"
+                                                                onClick={() => handleResetStatus(player.sleeperId)}
+                                                            >
+                                                                Reset
+                                                            </button>
+                                                        )) || (
+                                                                <>
+                                                                    <button
+                                                                        className="inline-flex items-center px-2 py-1 border border-blue-300 text-xs font-medium rounded text-blue-700 bg-white hover:bg-blue-50 transition-colors cursor-pointer"
+                                                                        title="Mark as drafted by you"
+                                                                        onClick={() => handleDrafted(player.sleeperId)}
+                                                                    >
+                                                                        Draft
+                                                                    </button>
+                                                                    <button
+                                                                        className="inline-flex items-center px-2 py-1 border border-gray-300 text-xs font-medium rounded text-gray-700 bg-white hover:bg-gray-50 transition-colors cursor-pointer"
+                                                                        title="Mark as drafted by someone else"
+                                                                        onClick={() => handleAssigned(player.sleeperId)}
+                                                                    >
+                                                                        Assigned
+                                                                    </button>
+                                                                </>
+                                                            )}
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>

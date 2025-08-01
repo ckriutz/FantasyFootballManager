@@ -7,29 +7,32 @@ import { Link } from 'react-router-dom';
 export default function Navbar() {
     const { isLoading, user, isAuthenticated } = useAuth0();
     return (
-        <nav className="bg-gray-800 text-white shadow-md">
-            <div className="container mx-auto px-4 py-3 flex justify-between items-center">
+        <nav className="bg-gray-800 text-white shadow-lg border-b border-gray-700">
+            <div className="container mx-auto px-6 py-4 flex justify-between items-center">
                 
                 {/* Logo and Title */}
-                <div className="flex items-center space-x-2">
-                    <Link to="/">
-                        <h1 className="text-xl font-bold"><span className="text-xl">🏈 🔥 </span> Fantasy Firewall</h1>
+                <div className="flex items-center space-x-3">
+                    <Link to="/" className="group">
+                        <h1 className="text-2xl font-bold group-hover:text-blue-400 transition-colors duration-200">
+                            <span className="text-2xl mr-2">🏈 🔥</span> 
+                            Fantasy Football Manager
+                        </h1>
                     </Link>
                 </div>
 
-                {/* Status Button */}
-                <div className="flex space-x-4">
+                {/* Action Buttons */}
+                <div className="flex items-center space-x-4">
                     {/* Status Button */}
-                    <Link to="/status" className="flex items-center space-x-2 bg-stone-50 hover:bg-stone-200 text-black font-medium py-2 px-4 rounded">
-                        <FaHeartbeat className="text-red-600" />
+                    <Link to="/status" className="flex items-center space-x-2 bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded transition-colors duration-200 shadow-md hover:shadow-lg">
+                        <FaHeartbeat className="text-red-400" />
                         <span>Status</span>
                     </Link>
 
                     {/* GitHub Button */}
-                    <Link to="github.com" className="flex items-center space-x-2 bg-gray-600 hover:bg-gray-700 text-white font-medium py-2 px-4 rounded">
+                    <a href="https://github.com/ckriutz/FantasyFootballManager" target="_blank" rel="noopener noreferrer" className="flex items-center space-x-2 bg-gray-600 hover:bg-gray-700 text-white font-medium py-2 px-4 rounded transition-colors duration-200 shadow-md hover:shadow-lg">
                         <FaGithub />
                         <span>GitHub</span>
-                    </Link>
+                    </a>
 
                     { isAuthenticated && !isLoading ? <UserMenu user={user} /> : <LoginButton /> }
                 </div>
