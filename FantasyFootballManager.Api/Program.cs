@@ -283,26 +283,49 @@ app.MapGet("/players/position/{position}", (string position) =>
 //var players = fantasyplayers.Where(x => x.Tier > 0).ToList();
 //});
 
-// Get my players from the database.
-//app.MapGet("/myplayers", () => 
-//{
-//    Console.WriteLine($"Getting all my players from the database.");
-//    // Get all the players from FantasyPlayers where IsOnMyTeam is true
-//    var combinedQuery = from fantasy in dbContext.FantasyPlayers where fantasy.IsOnMyTeam == true
-//    join sleeper in dbContext.SleeperPlayers on fantasy.PlayerId equals sleeper.PlayerId
-//    join sportsdata in dbContext.SportsDataIoPlayers on sleeper.FullName equals sportsdata.Name
-//    join pros in dbContext.FantasyProsPlayers on sleeper.SportRadarId equals pros.SportsdataId
-//    select new 
-//    {
-//        sleeper,
-//        fantasy,
-//        sportsdata,
-//        pros,
-//        Team = sleeper.Team
-//    };
-//    return combinedQuery.ToList();
-//    
-//});
+// Get players drafted on my team
+app.MapGet("/players/drafted/{sub}", (string sub) => 
+{
+    var combinedQuery = dbContext.SleeperPlayers
+        .Join(dbContext.SportsDataIoPlayers, 
+              sleeper => sleeper.FullName, 
+              sportsdata => sportsdata.Name, 
+              (sleeper, sportsdata) => new { sleeper, sportsdata })
+        .Join(dbContext.FantasyProsPlayers,
+              combined => combined.sleeper.SportRadarId,
+              pros => pros.SportsdataId,
+              (combined, pros) => new { combined.sleeper, combined.sportsdata, pros })
+        .GroupJoin(dbContext.FantasyActivities.Where(a => a.User == sub && a.IsDraftedOnMyTeam),
+                   combined => combined.sleeper.PlayerId,
+                   activity => activity.PlayerId.ToString(),
+                   (combined, activities) => new { combined, activities })
+        .SelectMany(x => x.activities.DefaultIfEmpty(),
+                   (combined, activity) => new
+                   {
+                       SleeperId = combined.combined.sleeper.PlayerId,
+                       Name = combined.combined.sleeper.FullName,
+                       Position = combined.combined.sleeper.Position,
+                       Depth = combined.combined.sleeper.DepthChartOrder,
+                       ByeWeek = combined.combined.pros.PlayerByeWeek,
+                       Rank = combined.combined.pros.RankEcr,
+                       AdpPpr = combined.combined.sportsdata.AverageDraftPositionPPR,
+                       ProjPoints = combined.combined.sportsdata.ProjectedFantasyPoints,
+                       LastSeasonProjPoints = combined.combined.sportsdata.LastSeasonFantasyPoints,
+                       SearchRank = combined.combined.sleeper.SearchRank,
+                       RankEcr = combined.combined.pros.RankEcr,
+                       Team = combined.combined.sleeper.Team,
+                       // FantasyActivity fields with default values
+                       IsThumbsUp = activity != null && activity.IsThumbsUp,
+                       IsThumbsDown = activity != null && activity.IsThumbsDown,
+                       IsDraftedOnMyTeam = activity != null && activity.IsDraftedOnMyTeam,
+                       IsDraftedOnOtherTeam = activity != null && activity.IsDraftedOnOtherTeam,
+                       ActivityUser = activity != null ? activity.User : null
+                   })
+        .Where(x => x.IsDraftedOnMyTeam)
+        .OrderBy(x => x.SearchRank);
+
+    return combinedQuery.ToList();
+});
 
 //app.MapGet("/availableplayers", () => 
 //{

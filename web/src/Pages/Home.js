@@ -9,17 +9,32 @@ export default function Home() {
     const [playersLoading, setPlayersLoading] = useState(false);
 
     useEffect(() => {
-        if (isAuthenticated) {
+        if (isAuthenticated && user) {
             console.log("Loading user data...");
             setPlayersLoading(true);
             console.log("Fetching players for user:", user.name);
-            fetch(`http://127.0.0.1:8000/my-players/${user.name}`)
-                .then(res => res.json())
-                .then(data => setPlayers(data))
-                .catch(() => setPlayers([]))
+            
+            // Use environment variable or relative URL for API endpoint
+            const apiUrl = process.env.REACT_APP_API_URL || 'http://127.0.0.1:5180';
+            
+            fetch(`${apiUrl}/players/drafted/${user.sub}`)
+                .then(res => {
+                    if (!res.ok) {
+                        throw new Error(`HTTP error! status: ${res.status}`);
+                    }
+                    return res.json();
+                })
+                .then(data => {
+                    console.log("Players fetched successfully:", data);
+                    setPlayers(Array.isArray(data) ? data : []);
+                })
+                .catch(error => {
+                    console.error("Error fetching players:", error);
+                    setPlayers([]);
+                })
                 .finally(() => setPlayersLoading(false));
         }
-    }, [isAuthenticated]);
+    }, [isAuthenticated, user]);
 
     // This is only when things are loading, I guess.
     if (isLoading) {
@@ -95,20 +110,20 @@ export default function Home() {
                         <div className="w-1/2 bg-gray-700 rounded-lg p-6">
                             <h2 className="text-2xl font-bold text-white mb-4">Your Players</h2>
                             {players.length > 0 ? (
-                                <div className="space-y-3 max-h-96 overflow-y-auto">
+                                <div className="space-y-2 max-h-96 overflow-y-auto">
                                     {players.map((player, idx) => (
-                                        <div key={idx} className="bg-gray-600 rounded-lg p-3 hover:bg-gray-500 transition-colors">
+                                        <Link key={idx} to={`/player/${player.sleeperId}`} className="block bg-gray-600 rounded p-2.5 hover:bg-gray-500 transition-colors cursor-pointer">
                                             <div className="flex justify-between items-center">
-                                                <div>
-                                                    <h3 className="text-white font-medium text-base">{player.PlayerPositionId || 'N/A'} • {player.PlayerName || 'Unknown Player'}</h3>
-                                                    <p className="text-gray-300 text-xs">{player.TeamName || 'N/A'}</p>
+                                                <div className="flex-1 min-w-0">
+                                                    <h3 className="text-white font-medium text-sm truncate">{player.position || 'N/A'} • {player.name || 'Unknown Player'}</h3>
+                                                    <p className="text-gray-300 text-xs truncate">{player.team.name || 'N/A'}</p>
                                                 </div>
-                                                <div className="text-right">
-                                                    <p className="text-blue-400 font-medium text-sm">Rank #{player.RankEcr || 'N/A'}</p>
-                                                    <p className="text-gray-300 text-xs">Bye: Week {player.PlayerByeWeek || 'N/A'}</p>
+                                                <div className="text-right flex-shrink-0 ml-3">
+                                                    <p className="text-gray-300 font-medium text-xs">Rank {player.rankEcr || 'N/A'} | Proj. {player.projPoints || 'N/A'}</p>
+                                                    <p className="text-gray-300 text-xs">Bye {player.byeWeek || 'N/A'}</p>
                                                 </div>
                                             </div>
-                                        </div>
+                                        </Link>
                                     ))}
                                 </div>
                             ) : (

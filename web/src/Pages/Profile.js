@@ -58,7 +58,7 @@ const Profile = () => {
                   </div>
                   
                   <div className="flex items-center space-x-4 mb-4">
-                    <span className="text-gray-400">📍 New York, NY</span>
+                    <span className="text-gray-400">🆔 {user.sub}</span>
                     <div className="flex items-center space-x-1">
                       <span className="text-yellow-400">⭐</span>
                       <span className="text-white font-medium">8.6</span>
@@ -69,15 +69,7 @@ const Profile = () => {
                   </div>
                   
                   <div className="flex space-x-4">
-                    <button className="bg-gray-600 hover:bg-gray-700 text-white font-medium py-2 px-4 rounded">
-                      📨 Send message
-                    </button>
-                    <button className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded">
-                      👥 Contacts
-                    </button>
-                    <button className="bg-gray-600 hover:bg-gray-700 text-white font-medium py-2 px-4 rounded">
-                      🚨 Report user
-                    </button>
+                    
                   </div>
                 </div>
               </div>
@@ -88,40 +80,52 @@ const Profile = () => {
               {/* Left Column - Work & Skills */}
               <div className="space-y-6">
                 {/* Work Section */}
+                
+                
+                {/* League Numbers Form */}
                 <div className="bg-gray-700 rounded-lg p-6">
-                  <h3 className="text-xl font-bold text-white mb-4">WORK</h3>
-                  
-                  <div className="space-y-4">
+                  <h3 className="text-xl font-bold text-white mb-4">LEAGUE NUMBERS</h3>
+                  <form className="space-y-4">
                     <div>
-                      <div className="flex items-center space-x-2 mb-2">
-                        <h4 className="text-white font-medium">Spotify New York</h4>
-                        <span className="bg-blue-600 text-white px-2 py-1 rounded text-xs">Primary</span>
-                      </div>
-                      <p className="text-gray-400 text-sm">170 William Street</p>
-                      <p className="text-gray-400 text-sm">New York, NY 10038-78 212 812-51</p>
+                      <label className="block text-gray-300 text-sm font-medium mb-2">
+                        Yahoo League ID
+                      </label>
+                      <input
+                        type="text"
+                        className="w-full px-3 py-2 bg-gray-600 border border-gray-500 rounded text-white placeholder-gray-400 focus:outline-none focus:border-blue-500"
+                        placeholder="Enter your Yahoo league ID"
+                      />
                     </div>
                     
                     <div>
-                      <div className="flex items-center space-x-2 mb-2">
-                        <h4 className="text-white font-medium">Metropolitan Museum</h4>
-                        <span className="bg-gray-600 text-white px-2 py-1 rounded text-xs">Secondary</span>
-                      </div>
-                      <p className="text-gray-400 text-sm">525 E 68th Street</p>
-                      <p className="text-gray-400 text-sm">New York, NY 10021-78 156-187-60</p>
+                      <label className="block text-gray-300 text-sm font-medium mb-2">
+                        ESPN League ID
+                      </label>
+                      <input
+                        type="text"
+                        className="w-full px-3 py-2 bg-gray-600 border border-gray-500 rounded text-white placeholder-gray-400 focus:outline-none focus:border-blue-500"
+                        placeholder="Enter your ESPN league ID"
+                      />
                     </div>
-                  </div>
-                </div>
-                
-                {/* Skills Section */}
-                <div className="bg-gray-700 rounded-lg p-6">
-                  <h3 className="text-xl font-bold text-white mb-4">SKILLS</h3>
-                  <div className="space-y-2">
-                    <div className="text-gray-300">Branding</div>
-                    <div className="text-gray-300">UI/UX</div>
-                    <div className="text-gray-300">Web + Design</div>
-                    <div className="text-gray-300">Packaging</div>
-                    <div className="text-gray-300">Print & Editorial</div>
-                  </div>
+                    
+                    <div>
+                      <label className="block text-gray-300 text-sm font-medium mb-2">
+                        Sleeper League ID
+                      </label>
+                      <input
+                        type="text"
+                        className="w-full px-3 py-2 bg-gray-600 border border-gray-500 rounded text-white placeholder-gray-400 focus:outline-none focus:border-blue-500"
+                        placeholder="Enter your Sleeper league ID"
+                      />
+                    </div>
+                    
+                    <button 
+                      type="submit"
+                      className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded w-full transition-colors"
+                    >
+                      Save League Numbers
+                    </button>
+                  </form>
                 </div>
               </div>
               
@@ -132,39 +136,16 @@ const Profile = () => {
                   <h3 className="text-xl font-bold text-white mb-4">CONTACT INFORMATION</h3>
                   
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <label className="text-gray-400 text-sm">sub:</label>
-                      <p className="text-white">{user.sub}</p>
-                    </div>
-                    <div>
-                      <label className="text-gray-400 text-sm">Address:</label>
-                      <p className="text-white">525 E 68th Street</p>
-                      <p className="text-gray-300 text-sm">New York, NY 10021-78 156-187-60</p>
-                    </div>
-                    <div>
-                      <label className="text-gray-400 text-sm">E-mail:</label>
-                      <p className="text-blue-400">{user.email}</p>
-                    </div>
-                    <div>
-                      <label className="text-gray-400 text-sm">Site:</label>
-                      <p className="text-blue-400">www.jeremyrose.com</p>
-                    </div>
+                   
                   </div>
                 </div>
                 
                 {/* Basic Information */}
                 <div className="bg-gray-700 rounded-lg p-6">
-                  <h3 className="text-xl font-bold text-white mb-4">BASIC INFORMATION</h3>
+                  <h3 className="text-xl font-bold text-white mb-4">SOME INFORMATION</h3>
                   
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <label className="text-gray-400 text-sm">Birthday:</label>
-                      <p className="text-white">June 5, 1992</p>
-                    </div>
-                    <div>
-                      <label className="text-gray-400 text-sm">Gender:</label>
-                      <p className="text-white">Male</p>
-                    </div>
+
                   </div>
                 </div>
               </div>
