@@ -9,6 +9,7 @@ public class FantasyDbContext : DbContext
     public DbSet<Team> Teams { get; set; }
     public DbSet<DataStatus> DataStatus { get; set; }
     public DbSet<FantasyActivity> FantasyActivities { get; set; }
+    public DbSet<User> Users { get; set; }
 
     public FantasyDbContext() { }
         
@@ -94,6 +95,18 @@ public class FantasyDbContext : DbContext
         modelBuilder.Entity<FantasyActivity>(entity =>
         {
             entity.Property(e => e.User).HasMaxLength(100);
+        });
+
+        // Configure User entity
+        modelBuilder.Entity<User>(entity =>
+        {
+            entity.Property(e => e.Auth0Id).HasMaxLength(100);
+            entity.Property(e => e.YahooUsername).HasMaxLength(50);
+            entity.Property(e => e.YahooLeagueId).HasMaxLength(50);
+            entity.Property(e => e.EspnUsername).HasMaxLength(50);
+            entity.Property(e => e.EspnLeagueId).HasMaxLength(50);
+            entity.Property(e => e.SleeperUsername).HasMaxLength(50);
+            entity.Property(e => e.SleeperLeagueId).HasMaxLength(50);
         });
     }
     

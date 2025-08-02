@@ -11,11 +11,14 @@ export default function Players() {
     const [selectedPosition, setSelectedPosition] = useState('All');
     const { isLoading, user, isAuthenticated } = useAuth0();
 
+    // Use environment variable or relative URL for API endpoint
+    const apiUrl = process.env.REACT_APP_API_URL || 'http://127.0.0.1:5180';
+
     useEffect(() => {
         console.log('User is authenticated:', user);
         if (isAuthenticated) {
-            console.log(`http://localhost:5180/players/simple/${user.sub}`);
-            fetch(`http://localhost:5180/players/simple/${user.sub}`)
+            console.log(`${apiUrl}/players/simple/${user.sub}`);
+            fetch(`${apiUrl}/players/simple/${user.sub}`)
                 .then((response) => {
                     if (!response.ok) {
                         throw new Error('Failed to fetch data');
@@ -48,8 +51,8 @@ export default function Players() {
             console.error("User information is missing.");
             return;
         }
-        console.log(`/players/${playerId}/draft/${user.sub}`);
-        fetch(`http://localhost:5180/players/${playerId}/draft/${user.sub}`, {
+        console.log(`${apiUrl}/players/${playerId}/draft/${user.sub}`);
+        fetch(`${apiUrl}/players/${playerId}/draft/${user.sub}`, {
 
             method: 'POST',
             headers: {
@@ -97,7 +100,7 @@ export default function Players() {
             return;
         }
 
-        fetch(`http://localhost:5180/players/${playerId}/assign/${user.sub}`, {
+        fetch(`${apiUrl}/players/${playerId}/assign/${user.sub}`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -143,7 +146,7 @@ export default function Players() {
             return;
         }
 
-        fetch(`http://localhost:5180/players/${playerId}/reset/${user.sub}`, {
+        fetch(`${apiUrl}/players/${playerId}/reset/${user.sub}`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -189,8 +192,8 @@ export default function Players() {
             console.error("User information is missing.");
             return;
         }
-        console.log(`http://localhost:5180/players/${playerId}/thumbsup/${user.sub}`);
-        fetch(`http://localhost:5180/players/${playerId}/thumbsup/${user.sub}`, {
+        console.log(`${apiUrl}/players/${playerId}/thumbsup/${user.sub}`);
+        fetch(`${apiUrl}/players/${playerId}/thumbsup/${user.sub}`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -237,7 +240,7 @@ export default function Players() {
             return;
         }
 
-        fetch(`http://localhost:5180/players/${playerId}/thumbsdown/${user.sub}`, {
+        fetch(`${apiUrl}/players/${playerId}/thumbsdown/${user.sub}`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',

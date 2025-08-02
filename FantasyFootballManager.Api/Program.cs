@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.AspNetCore.Http.HttpResults;
 
 var postgresConnectionString = Environment.GetEnvironmentVariable("postgresConnectionString");
 if (string.IsNullOrWhiteSpace(postgresConnectionString))
@@ -50,6 +51,15 @@ using var scope = app.Services.CreateScope();
 using var dbContext = scope.ServiceProvider.GetRequiredService<FantasyDbContext>();
 
 app.MapGet("/version", () => "1.5.0");
+
+// When someone goes to the root of the API, return a welcome message.
+app.MapGet("/", () => "Welcome to the Fantasy Football Manager API!");
+
+app.MapGet("/health", () =>
+{
+    Console.WriteLine("Health check endpoint hit.");
+    return Microsoft.AspNetCore.Http.Results.Ok("API is healthy");
+});
 
 app.MapGet("/datastatus", () =>
 {
@@ -276,13 +286,6 @@ app.MapGet("/players/position/{position}", (string position) =>
     return combinedQuery.Where(x => x.SearchRank != 9999999).OrderBy(x => x.SearchRank).ToList();
 });
 
-
-//app.MapGet("/rankedfantasyplayers", () => 
-//{
-//    Console.WriteLine($"Getting all ranked players from redis.");
-//var players = fantasyplayers.Where(x => x.Tier > 0).ToList();
-//});
-
 // Get players drafted on my team
 app.MapGet("/players/drafted/{sub}", (string sub) => 
 {
@@ -326,25 +329,6 @@ app.MapGet("/players/drafted/{sub}", (string sub) =>
 
     return combinedQuery.ToList();
 });
-
-//app.MapGet("/availableplayers", () => 
-//{
-//    Console.WriteLine($"Getting all available players.");
-//    // Get all the players from FantasyPlayers where IsOnMyTeam is true
-//    var combinedQuery = from fantasy in dbContext.FantasyPlayers where fantasy.IsTaken == false
-//    join sleeper in dbContext.SleeperPlayers on fantasy.PlayerId equals sleeper.PlayerId
-//    join sportsdata in dbContext.SportsDataIoPlayers on sleeper.FullName equals sportsdata.Name
-//    join pros in dbContext.FantasyProsPlayers on sleeper.SportRadarId equals pros.SportsdataId
-//    select new 
-//    {
-//        sleeper,
-//        fantasy,
-//        sportsdata,
-//        pros,
-//        Team = sleeper.Team
-//    };
-//    return combinedQuery.ToList();
-//});
 
 // Add a player to my team by updating the datbase.
 app.MapPost("/players/{sleeperId}/draft/{sub}", (string sleeperId, string sub) =>
@@ -488,7 +472,38 @@ app.MapPost("/players/{sleeperId}/thumbsdown/{sub}", (string sleeperId, string s
     return player;
 });
 
-// When someone goes to the root of the API, return a welcome message.
-app.MapGet("/", () => "Welcome to the Fantasy Football Manager API!");
+// Add endpoint to get a user by Auth0Id
+app.MapGet("/users/{auth0Id}", (string auth0Id) =>
+{
+    Console.WriteLine($"Fetching user with Auth0Id: {auth0Id}");
+    var user = dbContext.Users.FirstOrDefault(u => u.Auth0Id == auth0Id);
+    return user ?? null;
+});
+
+// Add endpoint to create or update a user by Auth0Id
+app.MapPost("/users", (User user) =>
+{
+    Console.WriteLine($"Creating or updating user with Auth0Id: {user.Auth0Id}");
+    var existingUser = dbContext.Users.FirstOrDefault(u => u.Auth0Id == user.Auth0Id);
+
+    if (existingUser != null)
+    {
+        // Update existing user
+        existingUser.YahooUsername = user.YahooUsername;
+        existingUser.YahooLeagueId = user.YahooLeagueId;
+        existingUser.EspnUsername = user.EspnUsername;
+        existingUser.EspnLeagueId = user.EspnLeagueId;
+        existingUser.SleeperUsername = user.SleeperUsername;
+        existingUser.SleeperLeagueId = user.SleeperLeagueId;
+    }
+    else
+    {
+        // Add new user
+        dbContext.Users.Add(user);
+    }
+
+    dbContext.SaveChanges();
+    return user;
+});
 
 app.Run();

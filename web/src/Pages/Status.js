@@ -7,14 +7,18 @@ export default function Status() {
     const [apiHealth, setApiHealth] = useState(null);
     const [apiHealthLoading, setApiHealthLoading] = useState(true);
 
+    // Use environment variable or relative URL for API endpoint
+    const apiUrl = process.env.REACT_APP_API_URL || 'http://127.0.0.1:5180';
+
     useEffect(() => {
         // Check API health
         const checkApiHealth = async () => {
             try {
-                const response = await fetch('http://localhost:5180/health');
+                const response = await fetch(`${apiUrl}/health`);
                 if (response.ok) {
                     const healthData = await response.text();
-                    setApiHealth(healthData === 'OK' ? 'healthy' : 'unhealthy');
+                    console.log('API Health Response:', healthData);
+                    setApiHealth(healthData === '"API is healthy"' || healthData === 'API is healthy' ? 'healthy' : 'unhealthy');
                 } else {
                     setApiHealth('unhealthy');
                 }
@@ -28,7 +32,7 @@ export default function Status() {
         // Fetch data status
         const fetchDataStatus = async () => {
             try {
-                const response = await fetch('http://localhost:5180/datastatus');
+                const response = await fetch(`${apiUrl}/datastatus`);
                 if (response.ok) {
                     const data = await response.json();
                     setSources(data);
