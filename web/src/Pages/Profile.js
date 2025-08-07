@@ -122,19 +122,13 @@ const Profile = () => {
                 <div className="flex-1">
                   <div className="flex items-center space-x-4 mb-4">
                     <h1 className="text-3xl font-bold text-white">{user.name}</h1>
-                    <span className="bg-blue-600 text-white px-3 py-1 rounded text-sm font-medium">
-                      Product Designer
-                    </span>
                   </div>
                   
                   <div className="flex items-center space-x-4 mb-4">
                     <span className="text-gray-400">🆔 {user.sub}</span>
                     <div className="flex items-center space-x-1">
-                      <span className="text-yellow-400">⭐</span>
-                      <span className="text-white font-medium">8.6</span>
-                      <div className="flex space-x-1 ml-2">
-                        <span className="text-yellow-400">⭐⭐⭐⭐</span>
-                      </div>
+                      
+  
                     </div>
                   </div>
                   
@@ -218,7 +212,7 @@ const Profile = () => {
               <div className="lg:col-span-2 space-y-6">
                 {/* Contact Information */}
                 <div className="bg-gray-700 rounded-lg p-6">
-                  <h3 className="text-xl font-bold text-white mb-4">CONTACT INFORMATION</h3>
+                  <h3 className="text-xl font-bold text-white mb-4">SOME INFORMATION</h3>
                   
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                    

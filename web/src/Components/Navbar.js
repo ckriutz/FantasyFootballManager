@@ -1,8 +1,9 @@
-import { FaGithub, FaHeartbeat } from 'react-icons/fa';
+import { FaGithub, FaHeartbeat, FaRocket } from 'react-icons/fa';
 import LoginButton from '../Components/LoginButton'
 import { useAuth0 } from "@auth0/auth0-react";
 import UserMenu from './UserMenu';
 import { Link } from 'react-router-dom';
+
 
 export default function Navbar() {
     const { isLoading, user, isAuthenticated } = useAuth0();
@@ -23,6 +24,10 @@ export default function Navbar() {
                 {/* Action Buttons */}
                 <div className="flex items-center space-x-4">
                     {/* Status Button */}
+                    <div className="flex items-center space-x-2 bg-gray-600 text-white font-medium py-2 px-4 rounded transition-colors duration-200 shadow-md hover:shadow-lg">
+                        <FaRocket className="text-success" />
+                        <span>v 15</span>
+                    </div>
                     <Link to="/status" className="flex items-center space-x-2 bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded transition-colors duration-200 shadow-md hover:shadow-lg">
                         <FaHeartbeat className="text-red-400" />
                         <span>Status</span>
