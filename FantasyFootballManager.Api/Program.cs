@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using System.Threading;
 using FantasyFootballManager.DataService.Models;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.EntityFrameworkCore;
@@ -22,6 +23,9 @@ var MyAllowSpecificOrigins = "_myAllowSpecificOrigins";
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddDbContext<FantasyDbContext>(options => options.UseNpgsql(postgresConnectionString), ServiceLifetime.Transient);
+// Unified projection service for merging player sources
+builder.Services.AddScoped<IUnifiedPlayerProjectionService, UnifiedPlayerProjectionService>();
+builder.Services.AddScoped<IAvailablePlayersService, AvailablePlayersService>();
 
 builder.Services.AddCors(options =>
 {
@@ -328,6 +332,34 @@ app.MapGet("/players/drafted/{sub}", (string sub) =>
         .OrderBy(x => x.SearchRank);
 
     return combinedQuery.ToList();
+});
+
+// Get top available players for a user (excluding their drafted roster) with optional tuning parameters
+app.MapGet("/players/available/{sub}", async (
+    string sub,
+    int? overallLimit,
+    int? perPositionLimit,
+    bool? includeK,
+    bool? includeDst,
+    bool? biasToNeeds,
+    int? needsMultiplier,
+    int? hardCap,
+    IAvailablePlayersService availableService,
+    CancellationToken ct) =>
+{
+    Console.WriteLine($"Getting available players for user {sub}.");
+    var options = new AvailablePlayersQueryOptions(
+        OverallLimit: overallLimit ?? 40,
+        PerPositionLimit: perPositionLimit ?? 12,
+        IncludeK: includeK ?? false,
+        IncludeDst: includeDst ?? false,
+        BiasToNeeds: biasToNeeds ?? true,
+        NeedsMultiplier: needsMultiplier ?? 4,
+        HardCap: hardCap ?? 60
+    ).Normalize();
+
+    var list = await availableService.GetTopAvailableAsync(sub, options, ct);
+    return list;
 });
 
 // Add a player to my team by updating the datbase.
