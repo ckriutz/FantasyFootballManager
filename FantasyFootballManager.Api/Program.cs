@@ -31,7 +31,7 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy(name: MyAllowSpecificOrigins, policy =>
     {
-        policy.WithOrigins("http://localhost:3000", "https://ffootball.caseyk.dev", "http://ffootball.caseyk.dev", "http://192.168.40.13:3000")
+        policy.WithOrigins("http://localhost:3000", "http://localhost:3001", "https://ffootball.caseyk.dev", "http://ffootball.caseyk.dev", "http://192.168.40.13:3000", "http://192.168.40.13:3001")
         .AllowAnyMethod()
         .AllowAnyHeader();
     });
