@@ -46,8 +46,6 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-app.UseHttpsRedirection();
-
 // Enable CORS for everything
 app.UseCors(MyAllowSpecificOrigins);
 
