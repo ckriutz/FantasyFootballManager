@@ -78,6 +78,44 @@ export default function Status() {
                     </div>
                 </div>
 
+                {/* Environment Variables Status */}
+                <div className="mb-8">
+                    <h3 className="text-xl font-bold mb-4 text-white">Environment Variables</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        {[
+                            { name: 'REACT_APP_API_URL', value: process.env.REACT_APP_API_URL },
+                            { name: 'REACT_APP_AUTH0_DOMAIN', value: process.env.REACT_APP_AUTH0_DOMAIN },
+                            { name: 'REACT_APP_AUTH0_CLIENT_ID', value: process.env.REACT_APP_AUTH0_CLIENT_ID },
+                            { name: 'REACT_APP_AUTH0_REDIRECT_URI', value: process.env.REACT_APP_AUTH0_REDIRECT_URI }
+                        ].map(envVar => {
+                            const isSet = envVar.value && envVar.value.trim() !== '';
+                            return (
+                                <div key={envVar.name} className={`bg-gray-700 rounded-lg shadow p-6 border-l-4 hover:bg-gray-600 transition-colors ${
+                                    isSet ? 'border-green-500' : 'border-red-500'
+                                }`}>
+                                    <div className="flex items-center justify-between w-full mb-2">
+                                        <div className="text-lg font-bold text-white">{envVar.name}</div>
+                                        <div className={`w-3 h-3 rounded-full ${
+                                            isSet ? 'bg-green-500' : 'bg-red-500'
+                                        }`}></div>
+                                    </div>
+                                    <div className="text-gray-300 text-sm mb-2">
+                                        <span className="font-medium">Value:</span>
+                                        <span className="ml-2 font-mono bg-gray-800 px-2 py-1 rounded text-xs">
+                                            {isSet ? envVar.value : 'Not set'}
+                                        </span>
+                                    </div>
+                                    <div className={`text-sm font-medium ${
+                                        isSet ? 'text-green-400' : 'text-red-400'
+                                    }`}>
+                                        {isSet ? '✅ Variable is configured' : '❌ Variable is missing'}
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    </div>
+                </div>
+
                 {/* Data Sources Status */}
                 <div>
                     <h3 className="text-xl font-bold mb-4 text-white">Data Sources</h3>

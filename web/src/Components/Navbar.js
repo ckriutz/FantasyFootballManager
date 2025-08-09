@@ -26,18 +26,12 @@ export default function Navbar() {
                     {/* Status Button */}
                     <div className="flex items-center space-x-2 bg-gray-600 text-white font-medium py-2 px-4 rounded transition-colors duration-200 shadow-md hover:shadow-lg">
                         <FaRocket className="text-success" />
-                        <span>v 15</span>
+                        <span>v 15.2</span>
                     </div>
                     <Link to="/status" className="flex items-center space-x-2 bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded transition-colors duration-200 shadow-md hover:shadow-lg">
                         <FaHeartbeat className="text-red-400" />
                         <span>Status</span>
                     </Link>
-
-                    {/* GitHub Button */}
-                    <a href="https://github.com/ckriutz/FantasyFootballManager" target="_blank" rel="noopener noreferrer" className="flex items-center space-x-2 bg-gray-600 hover:bg-gray-700 text-white font-medium py-2 px-4 rounded transition-colors duration-200 shadow-md hover:shadow-lg">
-                        <FaGithub />
-                        <span>GitHub</span>
-                    </a>
 
                     { isAuthenticated && !isLoading ? <UserMenu user={user} /> : <LoginButton /> }
                 </div>

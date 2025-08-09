@@ -345,7 +345,7 @@ export default function Player() {
                                 <div className="bg-gradient-to-br from-gray-700 to-gray-800 rounded-xl shadow-lg p-6 text-center border border-gray-600 hover:border-yellow-400 transition-colors">
                                     <div className="flex flex-col justify-center items-center h-20">
                                         <p className="text-4xl font-bold text-yellow-400 mb-2">
-                                            {player.sportsDataIo?.FantasyPoints || 'N/A'}
+                                            {player.sportsDataIo?.ProjectedFantasyPoints || 'N/A'}
                                         </p>
                                         <h3 className="text-sm font-medium text-gray-300 uppercase tracking-wide">Fantasy Points</h3>
                                     </div>
@@ -463,30 +463,51 @@ export default function Player() {
                         </div>
                     </div>
 
-                    {/* Additional Stats - Dynasty and 2QB */}
-                    {(player.sportsDataIo?.AverageDraftPositionDynasty || player.sportsDataIo?.AverageDraftPosition2QB) && (
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            {player.sportsDataIo?.AverageDraftPositionDynasty && (
-                                <div className="bg-gray-700 rounded-lg shadow-md p-6">
-                                    <h3 className="text-lg font-bold text-white mb-4">Dynasty League</h3>
-                                    <div className="flex justify-between">
-                                        <span className="text-gray-300">Dynasty ADP:</span>
-                                        <span className="font-medium text-white">{player.sportsDataIo.AverageDraftPositionDynasty}</span>
+                    {/* Data Source Updates */}
+                    <div className="mb-6">
+                        <div className="bg-gray-700 rounded-lg shadow-md p-6">
+                            <h3 className="text-lg font-bold text-white mb-4">Data Source Updates</h3>
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                {/* Fantasy Pros Update */}
+                                <div className="bg-gray-600 rounded-lg p-4">
+                                    <h4 className="text-sm font-semibold text-gray-300 mb-2">Fantasy Pros</h4>
+                                    <div className="text-sm text-white">
+                                        {player.fantasyPros?.lastUpdated ? (
+                                            <span>
+                                                {new Date(player.fantasyPros.lastUpdated).toLocaleDateString()} at{' '}
+                                                {new Date(player.fantasyPros.lastUpdated).toLocaleTimeString()}
+                                            </span>
+                                        ) : (
+                                            <span className="text-gray-400">No update time available</span>
+                                        )}
                                     </div>
                                 </div>
-                            )}
 
-                            {player.sportsDataIo?.AverageDraftPosition2QB && (
-                                <div className="bg-gray-700 rounded-lg shadow-md p-6">
-                                    <h3 className="text-lg font-bold text-white mb-4">2QB League</h3>
-                                    <div className="flex justify-between">
-                                        <span className="text-gray-300">2QB ADP:</span>
-                                        <span className="font-medium text-white">{player.sportsDataIo.AverageDraftPosition2QB}</span>
+                                {/* Sports Data IO Update */}
+                                <div className="bg-gray-600 rounded-lg p-4">
+                                    <h4 className="text-sm font-semibold text-gray-300 mb-2">Sports Data IO</h4>
+                                    <div className="text-sm text-white">
+                                        {player.sportsDataIo?.lastUpdated ? (
+                                            <span>
+                                                {new Date(player.sportsDataIo.lastUpdated).toLocaleDateString()} at{' '}
+                                                {new Date(player.sportsDataIo.lastUpdated).toLocaleTimeString()}
+                                            </span>
+                                        ) : (
+                                            <span className="text-gray-400">No update time available</span>
+                                        )}
                                     </div>
                                 </div>
-                            )}
+
+                                {/* Sleeper Update (Stub) */}
+                                <div className="bg-gray-600 rounded-lg p-4">
+                                    <h4 className="text-sm font-semibold text-gray-300 mb-2">Sleeper</h4>
+                                    <div className="text-sm text-gray-400">
+                                        No update time available
+                                    </div>
+                                </div>
+                            </div>
                         </div>
-                    )}
+                    </div>
                 </div>
             </div>
         );
