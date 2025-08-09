@@ -5,7 +5,8 @@ import React, { useState, useEffect } from "react";
 
 const Profile = () => {
   const { user, isAuthenticated, isLoading } = useAuth0();
-  const [apiUrl, setApiUrl] = useState(null);
+    // Use environment variable or relative URL for API endpoint
+    const apiUrl = process.env.REACT_APP_API_URL || 'https://ffootball-api.caseyk.dev';
 
   // State for league IDs
   const [yahooLeagueId, setYahooLeagueId] = useState('');
@@ -16,40 +17,22 @@ const Profile = () => {
 
   // Fetch user data when component mounts
   useEffect(() => {
-    // Load runtime config first
-    const loadConfig = async () => {
-      try {
-        const resp = await fetch('/config.json', { cache: 'no-store' });
-        if (resp.ok) {
-          const cfg = await resp.json();
-          setApiUrl(cfg?.apiBaseUrl || '');
-        } else {
-          console.error('Failed to load /config.json');
-          setApiUrl('');
-        }
-      } catch (e) {
-        console.error('Error loading /config.json', e);
-        setApiUrl('');
-      }
-    };
-    loadConfig();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  useEffect(() => {
-    if (!apiUrl || !user?.sub) return;
-
     const fetchUserData = async () => {
+      if (!user?.sub) return;
+      
       setIsLoadingUserData(true);
       try {
         const response = await fetch(`${apiUrl}/users/${user.sub}`);
         if (response.ok) {
+          
           const userData = await response.json();
           console.log('User data fetched successfully:', userData);
+          // Populate the form fields with existing data
           setYahooLeagueId(userData.yahooLeagueId || '');
           setEspnLeagueId(userData.espnLeagueId || '');
           setSleeperLeagueId(userData.sleeperLeagueId || '');
         } else if (response.status !== 404) {
+          // Only log error if it's not a 404 (user not found is expected for new users)
           console.error('Error fetching user data:', response.statusText);
         }
       } catch (error) {
@@ -60,8 +43,7 @@ const Profile = () => {
     };
 
     fetchUserData();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [apiUrl, user?.sub]);
+  }, [user?.sub, apiUrl]);
 
   // Handle form submission
   const handleSubmitLeagueNumbers = async (e) => {
@@ -69,7 +51,6 @@ const Profile = () => {
     setIsSubmitting(true);
 
     try {
-      if (!apiUrl) return;
       const response = await fetch(`${apiUrl}/users`, {
         method: 'POST',
         headers: {

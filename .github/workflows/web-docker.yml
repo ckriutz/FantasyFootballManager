@@ -43,6 +43,11 @@ jobs:
                 context: "{{defaultContext}}:web"
                 platforms: linux/arm64
                 push: true
+                build-args: |
+                  REACT_APP_API_URL=${{ secrets.REACT_APP_API_URL }}
+                  REACT_APP_AUTH0_DOMAIN=${{ secrets.REACT_APP_AUTH0_DOMAIN }}
+                  REACT_APP_AUTH0_CLIENT_ID=${{ secrets.REACT_APP_AUTH0_CLIENT_ID }}
+                  REACT_APP_AUTH0_REDIRECT_URI=${{ secrets.REACT_APP_AUTH0_REDIRECT_URI }}
                 tags: |
                       ghcr.io/ckriutz/fantasyfootballmanager-web:latest
                       ghcr.io/ckriutz/fantasyfootballmanager-web:${{ github.run_number }}

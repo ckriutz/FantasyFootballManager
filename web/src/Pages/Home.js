@@ -7,37 +7,16 @@ export default function Home() {
     const { isLoading, user, isAuthenticated } = useAuth0();
     const [players, setPlayers] = useState([]);
     const [playersLoading, setPlayersLoading] = useState(false);
-    const [apiUrl, setApiUrl] = useState(null);
-
-    // Load runtime config for API URL
-    // Load runtime config for API URL
-    useEffect(() => {
-        const loadConfig = async () => {
-            try {
-                const resp = await fetch('/config.json', { cache: 'no-store' });
-                if (resp.ok) {
-                    const cfg = await resp.json();
-                    setApiUrl(cfg?.apiBaseUrl || '');
-                } else {
-                    console.error('Failed to load /config.json');
-                    setApiUrl('');
-                }
-            } catch (e) {
-                console.error('Error loading /config.json', e);
-                setApiUrl('');
-            }
-        };
-        loadConfig();
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []);
 
     useEffect(() => {
-        if (!apiUrl) return;
         if (isAuthenticated && user) {
             console.log("Loading user data...");
             setPlayersLoading(true);
             console.log("Fetching players for user:", user.name);
-
+            
+            // Use environment variable or relative URL for API endpoint
+            const apiUrl = process.env.REACT_APP_API_URL || 'https://ffootball-api.caseyk.dev';
+            
             fetch(`${apiUrl}/players/drafted/${user.sub}`)
                 .then(res => {
                     if (!res.ok) {
@@ -55,8 +34,7 @@ export default function Home() {
                 })
                 .finally(() => setPlayersLoading(false));
         }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [apiUrl, isAuthenticated, user]);
+    }, [isAuthenticated, user]);
 
     // This is only when things are loading, I guess.
     if (isLoading) {

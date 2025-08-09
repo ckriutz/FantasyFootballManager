@@ -9,31 +9,11 @@ export default function Player() {
     const { id } = useParams();
     const [player, setPlayer] = useState();
     const { isLoading, user, isAuthenticated } = useAuth0();
-    const [apiUrl, setApiUrl] = useState(null);
 
-    // Load runtime config for API URL
-    useEffect(() => {
-        const loadConfig = async () => {
-            try {
-                const resp = await fetch('/config.json', { cache: 'no-store' });
-                if (resp.ok) {
-                    const cfg = await resp.json();
-                    setApiUrl(cfg?.apiBaseUrl || '');
-                } else {
-                    console.error('Failed to load /config.json');
-                    setApiUrl('');
-                }
-            } catch (e) {
-                console.error('Error loading /config.json', e);
-                setApiUrl('');
-            }
-        };
-        loadConfig();
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []);
+    // Use environment variable or relative URL for API endpoint
+    const apiUrl = process.env.REACT_APP_API_URL || 'https://ffootball-api.caseyk.dev';
 
     useEffect(() => {
-        if (!apiUrl) return;
         // Don't fetch anything while authentication is loading
         if (isLoading) {
             return;
@@ -71,8 +51,7 @@ export default function Player() {
                 })
                 .catch((error) => console.error('Error fetching player data:', error));
         }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [apiUrl, id, isAuthenticated, isLoading, user]);
+    }, [id, isAuthenticated, isLoading, user]);
 
     const handleThumbsUp = (playerId) => {
         console.log(`Thumbs up for player ${playerId}`);
@@ -81,7 +60,7 @@ export default function Player() {
             return;
         }
         console.log(`${apiUrl}/players/${playerId}/thumbsup/${user.sub}`);
-    fetch(`${apiUrl}/players/${playerId}/thumbsup/${user.sub}`, {
+        fetch(`${apiUrl}/players/${playerId}/thumbsup/${user.sub}`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -118,7 +97,7 @@ export default function Player() {
             return;
         }
 
-    fetch(`${apiUrl}/players/${playerId}/thumbsdown/${user.sub}`, {
+        fetch(`${apiUrl}/players/${playerId}/thumbsdown/${user.sub}`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -152,7 +131,7 @@ export default function Player() {
             return;
         }
         console.log(`${apiUrl}/players/${playerId}/draft/${user.sub}`);
-    fetch(`${apiUrl}/players/${playerId}/draft/${user.sub}`, {
+        fetch(`${apiUrl}/players/${playerId}/draft/${user.sub}`, {
 
             method: 'POST',
             headers: {
@@ -189,7 +168,7 @@ export default function Player() {
             return;
         }
 
-    fetch(`${apiUrl}/players/${playerId}/assign/${user.sub}`, {
+        fetch(`${apiUrl}/players/${playerId}/assign/${user.sub}`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -223,7 +202,7 @@ export default function Player() {
             return;
         }
 
-    fetch(`${apiUrl}/players/${playerId}/reset/${user.sub}`, {
+        fetch(`${apiUrl}/players/${playerId}/reset/${user.sub}`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',

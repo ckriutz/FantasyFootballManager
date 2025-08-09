@@ -7,78 +7,49 @@ export default function Status() {
     const [apiHealth, setApiHealth] = useState(null);
     const [apiHealthLoading, setApiHealthLoading] = useState(true);
 
-    // Resolve API base URL at runtime via public/config.json with safe fallbacks
-    const [apiUrl, setApiUrl] = useState(null);
-
-    // Helper: Check API health
-    const checkApiHealth = async () => {
-        try {
-            if (!apiUrl) return; // wait until apiUrl resolved
-            const response = await fetch(`${apiUrl}/health`);
-            if (response.ok) {
-                const healthData = await response.text();
-                console.log('API Health Response:', healthData);
-                setApiHealth(healthData === '"API is healthy"' || healthData === 'API is healthy' ? 'healthy' : 'unhealthy');
-            } else {
-                setApiHealth('unhealthy');
-            }
-        } catch (error) {
-            setApiHealth('unhealthy');
-        } finally {
-            setApiHealthLoading(false);
-        }
-    };
-
-    // Helper: Fetch data status
-    const fetchDataStatus = async () => {
-        try {
-            if (!apiUrl) return; // wait until apiUrl resolved
-            const response = await fetch(`${apiUrl}/datastatus`);
-            if (response.ok) {
-                const data = await response.json();
-                setSources(data);
-            } else {
-                console.error('Failed to fetch data status');
-            }
-        } catch (error) {
-            console.error('Error fetching data status:', error);
-        } finally {
-            setLoading(false);
-        }
-    };
+    // Use environment variable or relative URL for API endpoint
+    const apiUrl = process.env.REACT_APP_API_URL || 'https://ffootball-api.caseyk.dev';
 
     useEffect(() => {
-        // Load runtime config first, then perform requests
-        const loadConfig = async () => {
+        // Check API health
+        const checkApiHealth = async () => {
             try {
-                const resp = await fetch('/config.json', { cache: 'no-store' });
-                if (resp.ok) {
-                    const cfg = await resp.json();
-                    setApiUrl(cfg?.apiBaseUrl || '');
+                const response = await fetch(`${apiUrl}/health`);
+                if (response.ok) {
+                    const healthData = await response.text();
+                    console.log('API Health Response:', healthData);
+                    setApiHealth(healthData === '"API is healthy"' || healthData === 'API is healthy' ? 'healthy' : 'unhealthy');
                 } else {
-                    console.error('Failed to load /config.json');
-                    setApiUrl('');
+                    setApiHealth('unhealthy');
                 }
-            } catch (e) {
-                console.error('Error loading /config.json', e);
-                setApiUrl('');
+            } catch (error) {
+                setApiHealth('unhealthy');
+            } finally {
+                setApiHealthLoading(false);
             }
         };
 
-        // Load config
-        loadConfig();
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []);
-
-    // Trigger requests once apiUrl is resolved
-    useEffect(() => {
-        if (!apiUrl) return;
-        const run = async () => {
-            await Promise.all([checkApiHealth(), fetchDataStatus()]);
+        // Fetch data status
+        const fetchDataStatus = async () => {
+            try {
+                const response = await fetch(`${apiUrl}/datastatus`);
+                if (response.ok) {
+                    const data = await response.json();
+                    setSources(data);
+                } else {
+                    console.error('Failed to fetch data status');
+                }
+            } catch (error) {
+                console.error('Error fetching data status:', error);
+            } finally {
+                setLoading(false);
+            }
         };
-        run();
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [apiUrl]);
+
+        // Run both checks
+        checkApiHealth();
+        fetchDataStatus();
+    }, []);
 
     return (
         <div className="min-h-screen bg-gray-800">
