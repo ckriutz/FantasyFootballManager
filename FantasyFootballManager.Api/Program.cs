@@ -366,31 +366,31 @@ app.MapPost("/users/{sub}", (User user, FantasyDbContext dbContext) =>
     return user;
 });
 
-app.MapGet("/ai/draft-reccomendations/{sub}", async (string sub, IPlayersService playersService, FantasyDbContext dbContext, CancellationToken ct) =>
-{
-    Console.WriteLine($"Generating draft recommendations for user {sub}.");
-    // First step, we need to get the players the user has already drafted.
-    var draftedPlayers = await playersService.GetRosterAsync(sub, ct);
+// app.MapGet("/ai/draft-reccomendations/{sub}", async (string sub, IPlayersService playersService, CancellationToken ct)) =>
+// {
+//     Console.WriteLine($"Generating draft recommendations for user {sub}.");
+//     // First step, we need to get the players the user has already drafted.
+//     var draftedPlayers = await playersService.GetRosterAsync(sub, ct);
 
-    // Then, get the top players available
-    var options = new PlayersQueryOptions(
-        OverallLimit: 40,
-        PerPositionLimit: 12,
-        IncludeK: true,
-        IncludeDst: false,
-        BiasToNeeds: true,
-        NeedsMultiplier: 4,
-        HardCap: 60
-    ).Normalize();
+//     // Then, get the top players available
+//     var options = new PlayersQueryOptions(
+//         OverallLimit: 40,
+//         PerPositionLimit: 12,
+//         IncludeK: true,
+//         IncludeDst: false,
+//         BiasToNeeds: true,
+//         NeedsMultiplier: 4,
+//         HardCap: 60
+//     ).Normalize();
 
-    var topPlayers = await playersService.GetTopAvailableAsync(sub, options, ct);
+//     var topPlayers = await playersService.GetTopAvailableAsync(sub, options, ct);
 
-    // Convert to lightweight DTOs for AI processing
-    var aiDraftedPlayers = draftedPlayers.Select(AiUnifiedPlayer.FromUnifiedPlayer).ToList();
-    var aiAvailablePlayers = topPlayers.Select(AiUnifiedPlayer.FromUnifiedPlayer).ToList();
+//     // Convert to lightweight DTOs for AI processing
+//     var aiDraftedPlayers = draftedPlayers.Select(AiUnifiedPlayer.FromUnifiedPlayer).ToList();
+//     var aiAvailablePlayers = topPlayers.Select(AiUnifiedPlayer.FromUnifiedPlayer).ToList();
 
-    // Lastly we need to send the deserialized text of both the drafted players and the top available players list, along with the prompt.
-    return null; // Placeholder for AI processing logic
-});
+//     // Lastly we need to send the deserialized text of both the drafted players and the top available players list, along with the prompt.
+//     return null; // Placeholder for AI processing logic
+// });
 
 app.Run();
