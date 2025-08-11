@@ -112,14 +112,14 @@ export default function Home() {
                             {players.length > 0 ? (
                                 <div className="space-y-2 max-h-96 overflow-y-auto">
                                     {players.map((player, idx) => (
-                                        <Link key={idx} to={`/player/${player.sleeperId}`} className="block bg-gray-600 rounded p-2.5 hover:bg-gray-500 transition-colors cursor-pointer">
+                                        <Link key={idx} to={`/player/${player.playerId}`} className="block bg-gray-600 rounded p-2.5 hover:bg-gray-500 transition-colors cursor-pointer">
                                             <div className="flex justify-between items-center">
                                                 <div className="flex-1 min-w-0">
                                                     <h3 className="text-white font-medium text-sm truncate">{player.position || 'N/A'} • {player.name || 'Unknown Player'}</h3>
-                                                    <p className="text-gray-300 text-xs truncate">{player.team.name || 'N/A'}</p>
+                                                    <p className="text-gray-300 text-xs truncate">{player.teamName || 'N/A'}</p>
                                                 </div>
                                                 <div className="text-right flex-shrink-0 ml-3">
-                                                    <p className="text-gray-300 font-medium text-xs">Rank {player.rankEcr || 'N/A'} | Proj. {player.projPoints || 'N/A'}</p>
+                                                    <p className="text-gray-300 font-medium text-xs">Rank {player.rankEcr || 'N/A'} | Proj. {player.projectedFantasyPoints || 'N/A'}</p>
                                                     <p className="text-gray-300 text-xs">Bye {player.byeWeek || 'N/A'}</p>
                                                 </div>
                                             </div>
