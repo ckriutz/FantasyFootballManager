@@ -239,7 +239,7 @@ export default function Player() {
                     items={[
                         { label: 'Home', href: '/' },
                         { label: 'Players', href: '/players' },
-                        { label: player.fantasyPros?.player_name || player.sportsDataIo?.Name || 'Player', href: '/player/' + id }
+                        { label: player.name || player.name || 'Player', href: '/player/' + id }
                     ]}
                 />
                 <div className="container mx-auto p-4">
@@ -250,24 +250,24 @@ export default function Player() {
                             <div className="p-6 text-center">
                                 {/* Player Image */}
                                 <img
-                                    src={player.fantasyPros?.player_image_url || '/placeholder-image.png'}
-                                    alt={player.fantasyPros?.player_name || player.sportsDataIo?.Name}
+                                    src={player.playerImageUrl || '/placeholder-image.png'}
+                                    alt={player.name || player.name}
                                     className="w-24 h-24 rounded-full mx-auto mb-4 object-cover shadow-md"
                                 />
 
                                 {/* Player Name */}
                                 <h1 className="text-xl font-bold text-white mb-2">
-                                    {player.fantasyPros?.player_name || player.sportsDataIo?.Name}
+                                    {player.name || player.name}
                                 </h1>
 
                                 {/* Position */}
                                 <p className="text-gray-300 mb-1">
-                                    {player.fantasyPros?.player_position_id || player.sleeperData?.position}
+                                    {player.position || player.position}
                                 </p>
 
                                 {/* Team */}
                                 <p className="text-gray-300 mb-1">
-                                    {player.team?.name || 'N/A'} | 🎓 {player.sleeperData?.college || 'N/A'}
+                                    {player.teamName || 'N/A'} | 🎓 {player.college || 'N/A'}
                                 </p>
 
                                 {/* Action Buttons - Only show when authenticated */}
@@ -345,9 +345,9 @@ export default function Player() {
                                 <div className="bg-gradient-to-br from-gray-700 to-gray-800 rounded-xl shadow-lg p-6 text-center border border-gray-600 hover:border-yellow-400 transition-colors">
                                     <div className="flex flex-col justify-center items-center h-20">
                                         <p className="text-4xl font-bold text-yellow-400 mb-2">
-                                            {player.sportsDataIo?.ProjectedFantasyPoints || 'N/A'}
+                                            {player.projectedFantasyPoints || 'N/A'}
                                         </p>
-                                        <h3 className="text-sm font-medium text-gray-300 uppercase tracking-wide">Fantasy Points</h3>
+                                        <h3 className="text-sm font-medium text-gray-300 uppercase tracking-wide">Proj Fantasy Points</h3>
                                     </div>
                                 </div>
 
@@ -355,7 +355,7 @@ export default function Player() {
                                 <div className="bg-gradient-to-br from-gray-700 to-gray-800 rounded-xl shadow-lg p-6 text-center border border-gray-600 hover:border-blue-400 transition-colors">
                                     <div className="flex flex-col justify-center items-center h-20">
                                         <p className="text-4xl font-bold text-blue-400 mb-2">
-                                            {player.sportsDataIo?.AverageDraftPosition || 'N/A'}
+                                            {player.averageDraftPosition || 'N/A'}
                                         </p>
                                         <h3 className="text-sm font-medium text-gray-300 uppercase tracking-wide">Average Draft Position</h3>
                                     </div>
@@ -365,7 +365,7 @@ export default function Player() {
                                 <div className="bg-gradient-to-br from-gray-700 to-gray-800 rounded-xl shadow-lg p-6 text-center border border-gray-600 hover:border-green-400 transition-colors">
                                     <div className="flex flex-col justify-center items-center h-20">
                                         <p className="text-4xl font-bold text-green-400 mb-2">
-                                            {player.fantasyPros?.player_owned_avg ? `${player.fantasyPros.player_owned_avg}%` : 'N/A'}
+                                            {player.playerOwnedAvg ? `${player.playerOwnedAvg}%` : 'N/A'}
                                         </p>
                                         <h3 className="text-sm font-medium text-gray-300 uppercase tracking-wide">Ownership Percentage</h3>
                                     </div>
@@ -391,19 +391,19 @@ export default function Player() {
                             <div className="space-y-3">
                                 <div className="flex justify-between">
                                     <span className="text-gray-300">ECR Rank:</span>
-                                    <span className="font-medium text-white">{player.fantasyPros?.rank_ecr || 'N/A'}</span>
+                                    <span className="font-medium text-white">{player.rankEcr|| 'N/A'}</span>
                                 </div>
                                 <div className="flex justify-between">
                                     <span className="text-gray-300">Position Rank:</span>
-                                    <span className="font-medium text-white">{player.fantasyPros?.pos_rank || 'N/A'}</span>
+                                    <span className="font-medium text-white">{player.posRank || 'N/A'}</span>
                                 </div>
                                 <div className="flex justify-between">
                                     <span className="text-gray-300">Tier:</span>
-                                    <span className="font-medium text-white">{player.fantasyPros?.tier || 'N/A'}</span>
+                                    <span className="font-medium text-white">{player.tier|| 'N/A'}</span>
                                 </div>
                                 <div className="flex justify-between">
                                     <span className="text-gray-300">ADP:</span>
-                                    <span className="font-medium text-white">{player.sportsDataIo?.AverageDraftPosition || 'N/A'}</span>
+                                    <span className="font-medium text-white">{player.averageDraftPosition || 'N/A'}</span>
                                 </div>
                             </div>
                         </div>
@@ -414,23 +414,23 @@ export default function Player() {
                             <div className="space-y-3">
                                 <div className="flex justify-between">
                                     <span className="text-gray-300">Age:</span>
-                                    <span className="font-medium text-white">{player.sleeperData?.age || 'N/A'}</span>
+                                    <span className="font-medium text-white">{player.age || 'N/A'}</span>
                                 </div>
                                 <div className="flex justify-between">
                                     <span className="text-gray-300">Height:</span>
-                                    <span className="font-medium text-white">{player.sleeperData?.height ? `${Math.floor(player.sleeperData.height / 12)}'${player.sleeperData.height % 12}"` : 'N/A'}</span>
+                                    <span className="font-medium text-white">{player.height ? `${Math.floor(player.height / 12)}'${player.height % 12}"` : 'N/A'}</span>
                                 </div>
                                 <div className="flex justify-between">
                                     <span className="text-gray-300">Weight:</span>
-                                    <span className="font-medium text-white">{player.sleeperData?.weight ? `${player.sleeperData.weight} lbs` : 'N/A'}</span>
+                                    <span className="font-medium text-white">{player.weight ? `${player.weight} lbs` : 'N/A'}</span>
                                 </div>
                                 <div className="flex justify-between">
                                     <span className="text-gray-300">Experience:</span>
-                                    <span className="font-medium text-white">{player.sleeperData?.yearsExp ? `${player.sleeperData.yearsExp} years` : 'N/A'}</span>
+                                    <span className="font-medium text-white">{player.yearsExp ? `${player.yearsExp} years` : 'N/A'}</span>
                                 </div>
                                 <div className="flex justify-between">
                                     <span className="text-gray-300">College:</span>
-                                    <span className="font-medium text-white">{player.sleeperData?.college || 'N/A'}</span>
+                                    <span className="font-medium text-white">{player.college || 'N/A'}</span>
                                 </div>
                             </div>
                         </div>
@@ -441,23 +441,23 @@ export default function Player() {
                             <div className="space-y-3">
                                 <div className="flex justify-between">
                                     <span className="text-gray-300">Bye Week:</span>
-                                    <span className="font-medium text-white">{player.sportsDataIo?.ByeWeek || player.fantasyPros?.player_bye_week || 'N/A'}</span>
+                                    <span className="font-medium text-white">{player.byeWeek || player.byeWeek || 'N/A'}</span>
                                 </div>
                                 <div className="flex justify-between">
                                     <span className="text-gray-300">Projected Points:</span>
-                                    <span className="font-medium text-white">{player.sportsDataIo?.ProjectedFantasyPoints || 'N/A'}</span>
+                                    <span className="font-medium text-white">{player.projectedFantasyPoints || 'N/A'}</span>
                                 </div>
                                 <div className="flex justify-between">
                                     <span className="text-gray-300">Auction Value:</span>
-                                    <span className="font-medium text-white">{player.sportsDataIo?.AuctionValue ? `$${player.sportsDataIo.AuctionValue}` : 'N/A'}</span>
+                                    <span className="font-medium text-white">{player.auctionValue ? `$${player.auctionValue}` : 'N/A'}</span>
                                 </div>
                                 <div className="flex justify-between">
                                     <span className="text-gray-300">Owned %:</span>
-                                    <span className="font-medium text-white">{player.fantasyPros?.player_owned_avg ? `${player.fantasyPros.player_owned_avg}%` : 'N/A'}</span>
+                                    <span className="font-medium text-white">{player.playerOwnedAvg ? `${player.playerOwnedAvg}%` : 'N/A'}</span>
                                 </div>
                                 <div className="flex justify-between">
                                     <span className="text-gray-300">Status:</span>
-                                    <span className="font-medium text-white">{player.sleeperData?.status || 'N/A'}</span>
+                                    <span className="font-medium text-white">{player.status || 'N/A'}</span>
                                 </div>
                             </div>
                         </div>
@@ -472,10 +472,10 @@ export default function Player() {
                                 <div className="bg-gray-600 rounded-lg p-4">
                                     <h4 className="text-sm font-semibold text-gray-300 mb-2">Fantasy Pros</h4>
                                     <div className="text-sm text-white">
-                                        {player.fantasyPros?.lastUpdated ? (
+                                        {player.fantasyProsLastUpdated? (
                                             <span>
-                                                {new Date(player.fantasyPros.lastUpdated).toLocaleDateString()} at{' '}
-                                                {new Date(player.fantasyPros.lastUpdated).toLocaleTimeString()}
+                                                {new Date(player.fantasyProsLastUpdated).toLocaleDateString()} at{' '}
+                                                {new Date(player.fantasyProsLastUpdated).toLocaleTimeString()}
                                             </span>
                                         ) : (
                                             <span className="text-gray-400">No update time available</span>
@@ -487,10 +487,10 @@ export default function Player() {
                                 <div className="bg-gray-600 rounded-lg p-4">
                                     <h4 className="text-sm font-semibold text-gray-300 mb-2">Sports Data IO</h4>
                                     <div className="text-sm text-white">
-                                        {player.sportsDataIo?.lastUpdated ? (
+                                        {player.sportsDataIoLastUpdated ? (
                                             <span>
-                                                {new Date(player.sportsDataIo.lastUpdated).toLocaleDateString()} at{' '}
-                                                {new Date(player.sportsDataIo.lastUpdated).toLocaleTimeString()}
+                                                {new Date(player.sportsDataIoLastUpdated).toLocaleDateString()} at{' '}
+                                                {new Date(player.sportsDataIoLastUpdated).toLocaleTimeString()}
                                             </span>
                                         ) : (
                                             <span className="text-gray-400">No update time available</span>
@@ -501,8 +501,15 @@ export default function Player() {
                                 {/* Sleeper Update (Stub) */}
                                 <div className="bg-gray-600 rounded-lg p-4">
                                     <h4 className="text-sm font-semibold text-gray-300 mb-2">Sleeper</h4>
-                                    <div className="text-sm text-gray-400">
-                                        No update time available
+                                    <div className="text-sm text-white">
+                                        {player.sleeperLastUpdated ? (
+                                            <span>
+                                                {new Date(player.sleeperLastUpdated).toLocaleDateString()} at{' '}
+                                                {new Date(player.sleeperLastUpdated).toLocaleTimeString()}
+                                            </span>
+                                        ) : (
+                                            <span className="text-gray-400">No update time available</span>
+                                        )}
                                     </div>
                                 </div>
                             </div>

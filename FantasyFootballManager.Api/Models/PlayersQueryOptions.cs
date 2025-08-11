@@ -1,10 +1,10 @@
 namespace FantasyFootballManager.DataService.Models;
 
 /// <summary>
-/// Options controlling how available players are selected for draft analysis.
+/// Options controlling how available players are selected when querying the database.
 /// Keep defaults conservative to limit token usage when sending to AI.
 /// </summary>
-public sealed record AvailablePlayersQueryOptions(
+public sealed record PlayersQueryOptions(
     int OverallLimit = 40,        // Base overall cap before positional supplements
     int PerPositionLimit = 12,    // Max supplemental pulls per position
     bool IncludeK = false,        // Include Kickers
@@ -17,7 +17,7 @@ public sealed record AvailablePlayersQueryOptions(
     /// <summary>
     /// Returns a sanitized copy with enforced minimum/maximum boundaries.
     /// </summary>
-    public AvailablePlayersQueryOptions Normalize()
+    public PlayersQueryOptions Normalize()
     {
         var overall = OverallLimit <= 0 ? 40 : OverallLimit;
         var perPos = PerPositionLimit <= 0 ? 8 : PerPositionLimit;

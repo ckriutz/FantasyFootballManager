@@ -17,8 +17,8 @@ export default function Players() {
     useEffect(() => {
         console.log('User is authenticated:', user);
         if (isAuthenticated) {
-            console.log(`${apiUrl}/players/simple/${user.sub}`);
-            fetch(`${apiUrl}/players/simple/${user.sub}`)
+            console.log(`${apiUrl}/players/unified/${user.sub}`);
+            fetch(`${apiUrl}/players/unified/${user.sub}`)
                 .then((response) => {
                     if (!response.ok) {
                         throw new Error('Failed to fetch data');
@@ -76,7 +76,7 @@ export default function Players() {
                 // Update the players array to set isDraftedOnMyTeam to true
                 setPlayers((prevPlayers) =>
                     prevPlayers.map((player) =>
-                        player.sleeperId === playerId
+                        player.playerId === playerId
                             ? { ...player, isDraftedOnMyTeam: true }
                             : player
                     )
@@ -85,7 +85,7 @@ export default function Players() {
                 // Optionally update filteredPlayers if needed
                 setFilteredPlayers((prevFilteredPlayers) =>
                     prevFilteredPlayers.map((player) =>
-                        player.sleeperId === playerId
+                        player.playerId === playerId
                             ? { ...player, isDraftedOnMyTeam: true }
                             : player
                     )
@@ -122,7 +122,7 @@ export default function Players() {
                 // Update the players array to set isDraftedOnOtherTeam to true
                 setPlayers((prevPlayers) =>
                     prevPlayers.map((player) =>
-                        player.sleeperId === playerId
+                        player.playerId === playerId
                             ? { ...player, isDraftedOnOtherTeam: true }
                             : player
                     )
@@ -131,7 +131,7 @@ export default function Players() {
                 // Optionally update filteredPlayers if needed
                 setFilteredPlayers((prevFilteredPlayers) =>
                     prevFilteredPlayers.map((player) =>
-                        player.sleeperId === playerId
+                        player.playerId === playerId
                             ? { ...player, isDraftedOnOtherTeam: true }
                             : player
                     )
@@ -168,7 +168,7 @@ export default function Players() {
                 // Update the players array to reset isDraftedOnMyTeam and isDraftedOnOtherTeam
                 setPlayers((prevPlayers) =>
                     prevPlayers.map((player) =>
-                        player.sleeperId === playerId
+                        player.playerId === playerId
                             ? { ...player, isDraftedOnMyTeam: false, isDraftedOnOtherTeam: false }
                             : player
                     )
@@ -177,7 +177,7 @@ export default function Players() {
                 // Optionally update filteredPlayers if needed
                 setFilteredPlayers((prevFilteredPlayers) =>
                     prevFilteredPlayers.map((player) =>
-                        player.sleeperId === playerId
+                        player.playerId === playerId
                             ? { ...player, isDraftedOnMyTeam: false, isDraftedOnOtherTeam: false }
                             : player
                     )
@@ -215,7 +215,7 @@ export default function Players() {
                 // Update the players array to reset isThumbsUp and isThumbsDown
                 setPlayers((prevPlayers) =>
                     prevPlayers.map((player) =>
-                        player.sleeperId === playerId
+                        player.playerId === playerId
                             ? { ...player, isThumbsUp: data.isThumbsUp, isThumbsDown: data.isThumbsDown  }
                             : player
                     )
@@ -224,7 +224,7 @@ export default function Players() {
                 // Optionally update filteredPlayers if needed
                 setFilteredPlayers((prevFilteredPlayers) =>
                     prevFilteredPlayers.map((player) =>
-                        player.sleeperId === playerId
+                        player.playerId === playerId
                             ? { ...player, isThumbsUp: data.isThumbsUp, isThumbsDown: data.isThumbsDown  }
                             : player
                     )
@@ -264,7 +264,7 @@ export default function Players() {
 
                 setPlayers((prevPlayers) =>
                     prevPlayers.map((player) =>
-                        player.sleeperId === playerId
+                        player.playerId === playerId
                             ? { ...player, isThumbsUp: data.isThumbsUp, isThumbsDown: data.isThumbsDown }
                             : player
                     )
@@ -273,7 +273,7 @@ export default function Players() {
                 // Optionally update filteredPlayers if needed
                 setFilteredPlayers((prevFilteredPlayers) =>
                     prevFilteredPlayers.map((player) =>
-                        player.sleeperId === playerId
+                        player.playerId === playerId
                             ? { ...player, isThumbsUp: data.isThumbsUp, isThumbsDown: data.isThumbsDown  }
                             : player
                     )
@@ -380,7 +380,7 @@ export default function Players() {
                                     <tbody className="bg-white divide-y divide-gray-200">
                                         {filteredPlayers.map((player, index) => (
                                             <tr
-                                                key={player.sleeperId}
+                                                key={player.playerId}
                                                 className={`${
                                                     player.isDraftedOnMyTeam
                                                         ? 'bg-green-50 border-l-4 border-green-400' // Light green for players drafted on my team
@@ -396,7 +396,7 @@ export default function Players() {
                                                             <button
                                                                 className="p-1 text-green-600 hover:text-green-700 hover:bg-green-100 rounded transition-colors cursor-pointer"
                                                                 title="Thumbs Up"
-                                                                onClick={() => handleThumbsUp(player.sleeperId)}
+                                                                onClick={() => handleThumbsUp(player.playerId)}
                                                             >
                                                                 <span className="sr-only">Thumbs Up</span>
                                                                 <TiThumbsUp className="text-lg" />
@@ -407,7 +407,7 @@ export default function Players() {
                                                             <button
                                                                 className="p-1 text-red-600 hover:text-red-700 hover:bg-red-100 rounded transition-colors cursor-pointer"
                                                                 title="Thumbs Down"
-                                                                onClick={() => handleThumbsDown(player.sleeperId)}
+                                                                onClick={() => handleThumbsDown(player.playerId)}
                                                             >
                                                                 <span className="sr-only">Thumbs Down</span>
                                                                 <TiThumbsDown className="text-lg" />
@@ -416,14 +416,14 @@ export default function Players() {
                                                     </div>
                                                 </td>
                                                 <td className="px-3 py-2 whitespace-nowrap">
-                                                    <Link to={`/player/${player.sleeperId}`} className="text-blue-600 hover:text-blue-800 font-medium transition-colors">
+                                                    <Link to={`/player/${player.playerId}`} className="text-blue-600 hover:text-blue-800 font-medium transition-colors">
                                                         {player.name}
                                                     </Link>
                                                 </td>
                                                 <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-600">{player.position}</td>
-                                                <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-600">{player.team?.abbreviation || 'N/A'}</td>
-                                                <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-600">{player.rankEcr || 'N/A'}</td>
-                                                <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-600">{player.projPoints || 'N/A'}</td>
+                                                <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-600">{player.team?.teamAbbreviation || 'N/A'}</td>
+                                                <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-600">{player.rank || 'N/A'}</td>
+                                                <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-600">{player.projectedFantasyPoints || 'N/A'}</td>
                                                 <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-600">{player.byeWeek || 'N/A'}</td>
                                                 <td className="px-3 py-2 whitespace-nowrap">
                                                     <div className="flex space-x-1">
@@ -431,7 +431,7 @@ export default function Players() {
                                                             <button
                                                                 className="inline-flex items-center px-2 py-1 border border-green-300 text-xs font-medium rounded text-green-700 bg-white hover:bg-green-50 transition-colors cursor-pointer"
                                                                 title="Reset player status"
-                                                                onClick={() => handleResetStatus(player.sleeperId)}
+                                                                onClick={() => handleResetStatus(player.playerId)}
                                                             >
                                                                 Reset
                                                             </button>
@@ -440,14 +440,14 @@ export default function Players() {
                                                                     <button
                                                                         className="inline-flex items-center px-2 py-1 border border-blue-300 text-xs font-medium rounded text-blue-700 bg-white hover:bg-blue-50 transition-colors cursor-pointer"
                                                                         title="Mark as drafted by you"
-                                                                        onClick={() => handleDrafted(player.sleeperId)}
+                                                                        onClick={() => handleDrafted(player.playerId)}
                                                                     >
                                                                         Draft
                                                                     </button>
                                                                     <button
                                                                         className="inline-flex items-center px-2 py-1 border border-gray-300 text-xs font-medium rounded text-gray-700 bg-white hover:bg-gray-50 transition-colors cursor-pointer"
                                                                         title="Mark as drafted by someone else"
-                                                                        onClick={() => handleAssigned(player.sleeperId)}
+                                                                        onClick={() => handleAssigned(player.playerId)}
                                                                     >
                                                                         Assigned
                                                                     </button>
