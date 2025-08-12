@@ -421,8 +421,8 @@ export default function Players() {
                                                     </Link>
                                                 </td>
                                                 <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-600">{player.position}</td>
-                                                <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-600">{player.team?.teamAbbreviation || 'N/A'}</td>
-                                                <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-600">{player.rank || 'N/A'}</td>
+                                                <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-600">{player.teamAbbreviation || 'N/A'}</td>
+                                                <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-600">{player.rankEcr || 'N/A'}</td>
                                                 <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-600">{player.projectedFantasyPoints || 'N/A'}</td>
                                                 <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-600">{player.byeWeek || 'N/A'}</td>
                                                 <td className="px-3 py-2 whitespace-nowrap">

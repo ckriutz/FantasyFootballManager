@@ -242,31 +242,31 @@ export default function Player() {
                         { label: player.name || player.name || 'Player', href: '/player/' + id }
                     ]}
                 />
-                <div className="container mx-auto p-4">
+                <div className="container mx-auto p-4 max-w-7xl">
                     {/* Top Section - Profile and Key Stats */}
-                    <div className="flex flex-col lg:flex-row gap-6 mb-6">
+                    <div className="flex flex-col lg:flex-row gap-4 lg:gap-6 mb-6">
                         {/* Player Profile Card */}
-                        <div className="w-lg bg-gray-500 rounded-lg shadow-md overflow-hidden">
-                            <div className="p-6 text-center">
+                        <div className="w-full lg:w-96 lg:flex-shrink-0 bg-gray-500 rounded-lg shadow-md overflow-hidden">
+                            <div className="p-4 lg:p-6 text-center">
                                 {/* Player Image */}
                                 <img
                                     src={player.playerImageUrl || '/placeholder-image.png'}
                                     alt={player.name || player.name}
-                                    className="w-24 h-24 rounded-full mx-auto mb-4 object-cover shadow-md"
+                                    className="w-20 h-20 lg:w-24 lg:h-24 rounded-full mx-auto mb-4 object-cover shadow-md"
                                 />
 
                                 {/* Player Name */}
-                                <h1 className="text-xl font-bold text-white mb-2">
+                                <h1 className="text-lg lg:text-xl font-bold text-white mb-2">
                                     {player.name || player.name}
                                 </h1>
 
                                 {/* Position */}
-                                <p className="text-gray-300 mb-1">
+                                <p className="text-gray-300 mb-1 text-sm lg:text-base">
                                     {player.position || player.position}
                                 </p>
 
                                 {/* Team */}
-                                <p className="text-gray-300 mb-1">
+                                <p className="text-gray-300 mb-1 text-sm lg:text-base">
                                     {player.teamName || 'N/A'} | 🎓 {player.college || 'N/A'}
                                 </p>
 
@@ -275,25 +275,25 @@ export default function Player() {
                                     <>
                                         <div className="mb-4">
                                             {(!player.isDraftedOnMyTeam && !player.isDraftedOnOtherTeam) ? (
-                                                <div className="flex space-x-2">
-                                                    <button onClick={() => handleDrafted(id)} className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded cursor-pointer">
+                                                <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
+                                                    <button onClick={() => handleDrafted(id)} className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-3 lg:px-4 rounded cursor-pointer text-sm lg:text-base">
                                                         DRAFT
                                                     </button>
-                                                    <button onClick={() => handleAssigned(id)} className="flex-1 bg-gray-600 hover:bg-gray-500 text-white font-medium py-2 px-4 rounded cursor-pointer">
+                                                    <button onClick={() => handleAssigned(id)} className="flex-1 bg-gray-600 hover:bg-gray-500 text-white font-medium py-2 px-3 lg:px-4 rounded cursor-pointer text-sm lg:text-base">
                                                         ASSIGNED
                                                     </button>
                                                 </div>
                                             ) : player.isDraftedOnMyTeam ? (
                                                 <div className="text-center">
-                                                    <p className="text-green-400 font-medium mb-2">Drafted on My Team</p>
-                                                    <button onClick={() => handleResetStatus(id)} className="bg-gray-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded cursor-pointer">
+                                                    <p className="text-green-400 font-medium mb-2 text-sm lg:text-base">Drafted on My Team</p>
+                                                    <button onClick={() => handleResetStatus(id)} className="bg-gray-600 hover:bg-green-700 text-white font-medium py-2 px-3 lg:px-4 rounded cursor-pointer text-sm lg:text-base">
                                                         RESET
                                                     </button>
                                                 </div>
                                             ) : player.isDraftedOnOtherTeam ? (
                                                 <div className="text-center">
-                                                    <p className="text-red-400 font-medium mb-2">Drafted on Other Team</p>
-                                                    <button onClick={() => handleResetStatus(id)} className="bg-gray-600 hover:bg-red-700 text-white font-medium py-2 px-4 rounded cursor-pointer">
+                                                    <p className="text-red-400 font-medium mb-2 text-sm lg:text-base">Drafted on Other Team</p>
+                                                    <button onClick={() => handleResetStatus(id)} className="bg-gray-600 hover:bg-red-700 text-white font-medium py-2 px-3 lg:px-4 rounded cursor-pointer text-sm lg:text-base">
                                                         RESET
                                                     </button>
                                                 </div>
@@ -307,14 +307,14 @@ export default function Player() {
                                                     className="p-2 text-green-400 bg-gray-600 rounded-full cursor-pointer"
                                                     onClick={() => handleThumbsUp(id)}
                                                 >
-                                                    <FaThumbsUp size={20} />
+                                                    <FaThumbsUp size={18} />
                                                 </button>
                                             ) : player.isThumbsDown && !player.isThumbsUp ? (
                                                 <button
                                                     className="p-2 text-red-400 bg-gray-600 rounded-full cursor-pointer"
                                                     onClick={() => handleThumbsDown(id)}
                                                 >
-                                                    <FaThumbsDown size={20} />
+                                                    <FaThumbsDown size={18} />
                                                 </button>
                                             ) : (
                                                 <>
@@ -322,13 +322,13 @@ export default function Player() {
                                                         className="p-2 text-green-400 hover:bg-gray-600 rounded-full cursor-pointer"
                                                         onClick={() => handleThumbsUp(id)}
                                                     >
-                                                        <FaThumbsUp size={20} />
+                                                        <FaThumbsUp size={18} />
                                                     </button>
                                                     <button
                                                         className="p-2 text-red-400 hover:bg-gray-600 rounded-full cursor-pointer"
                                                         onClick={() => handleThumbsDown(id)}
                                                     >
-                                                        <FaThumbsDown size={20} />
+                                                        <FaThumbsDown size={18} />
                                                     </button>
                                                 </>
                                             )}

@@ -162,11 +162,11 @@ export default function Home() {
                         </div>
                     </div>
 
-                    {/* Two-column layout for cards */}
-                    <div className="flex space-x-4 max-w-7xl mx-auto">
+                    {/* Two-column layout for cards - responsive */}
+                    <div className="flex flex-col lg:flex-row space-y-4 lg:space-y-0 lg:space-x-4 max-w-7xl mx-auto">
                         {/* Players Card */}
-                        <div className="w-1/2 bg-gray-700 rounded-lg p-6">
-                            <h2 className="text-2xl font-bold text-white mb-4">Your Players</h2>
+                        <div className="w-full lg:w-1/2 bg-gray-700 rounded-lg p-4 lg:p-6">
+                            <h2 className="text-xl lg:text-2xl font-bold text-white mb-4">Your Players</h2>
                             {players.length > 0 ? (
                                 <div className="space-y-2 max-h-96 overflow-y-auto">
                                     {players.map((player, idx) => (
@@ -193,8 +193,8 @@ export default function Home() {
                         </div>
 
                         {/* AI Recommendations Card */}
-                        <div className="w-1/2 bg-gray-700 rounded-lg p-6">
-                            <h2 className="text-2xl font-bold text-white mb-4">AI Draft Recommendations</h2>
+                        <div className="w-full lg:w-1/2 bg-gray-700 rounded-lg p-4 lg:p-6">
+                            <h2 className="text-xl lg:text-2xl font-bold text-white mb-4">AI Draft Recommendations</h2>
                             
                             {recommendations.length === 0 && !recommendationsError && (
                                 <div className="flex flex-col items-center justify-center h-64">
