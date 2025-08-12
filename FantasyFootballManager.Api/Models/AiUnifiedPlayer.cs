@@ -15,6 +15,8 @@ public sealed record AiUnifiedPlayer
     public double? ProjectedFantasyPoints { get; init; }
     public double? AverageDraftPositionPpr { get; init; }
     public int Age { get; init; }
+    public bool IsThumbsUp { get; init; }
+    public bool IsThumbsDown { get; init; }
 
     /// <summary>
     /// Creates an AI-optimized DTO from a full UnifiedPlayer object
@@ -32,6 +34,8 @@ public sealed record AiUnifiedPlayer
             ProjectedFantasyPoints = player.ProjectedFantasyPoints,
             AverageDraftPositionPpr = player.AverageDraftPositionPpr,
             Age = player.Age,
+            IsThumbsUp = player.IsThumbsUp,
+            IsThumbsDown = player.IsThumbsDown
         };
     }
 }

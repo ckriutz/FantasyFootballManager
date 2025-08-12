@@ -7,6 +7,9 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.AspNetCore.Http.HttpResults;
+using Microsoft.AspNetCore.Mvc.ModelBinding.Binders;
+using FantasyFootballManager.Api.Services;
+using System.Text.Json;
 
 var postgresConnectionString = Environment.GetEnvironmentVariable("postgresConnectionString");
 if (string.IsNullOrWhiteSpace(postgresConnectionString))
@@ -26,6 +29,7 @@ builder.Services.AddDbContext<FantasyDbContext>(options => options.UseNpgsql(pos
 // Unified projection service for merging player sources
 builder.Services.AddScoped<IUnifiedPlayerService, UnifiedPlayerService>();
 builder.Services.AddScoped<IPlayersService, PlayersService>();
+builder.Services.AddScoped<IAiInferenceService, AiInferenceService>();
 
 builder.Services.AddCors(options =>
 {
@@ -366,31 +370,74 @@ app.MapPost("/users/{sub}", (User user, FantasyDbContext dbContext) =>
     return user;
 });
 
-// app.MapGet("/ai/draft-reccomendations/{sub}", async (string sub, IPlayersService playersService, CancellationToken ct)) =>
-// {
-//     Console.WriteLine($"Generating draft recommendations for user {sub}.");
-//     // First step, we need to get the players the user has already drafted.
-//     var draftedPlayers = await playersService.GetRosterAsync(sub, ct);
+app.MapGet("/ai/draft-reccomendations/{sub}", async (string sub, IPlayersService playersService, IAiInferenceService aiInferenceService, CancellationToken ct) =>
+{
+    Console.WriteLine($"Generating draft recommendations for user {sub}.");
+    // First step, we need to get the players the user has already drafted.
+    var draftedPlayers = await playersService.GetRosterAsync(sub, ct);
 
-//     // Then, get the top players available
-//     var options = new PlayersQueryOptions(
-//         OverallLimit: 40,
-//         PerPositionLimit: 12,
-//         IncludeK: true,
-//         IncludeDst: false,
-//         BiasToNeeds: true,
-//         NeedsMultiplier: 4,
-//         HardCap: 60
-//     ).Normalize();
+    // Then, get the top players available
+    var options = new PlayersQueryOptions(
+        OverallLimit: 40,
+        PerPositionLimit: 12,
+        IncludeK: true,
+        IncludeDst: false,
+        BiasToNeeds: true,
+        NeedsMultiplier: 4,
+        HardCap: 60
+    ).Normalize();
 
-//     var topPlayers = await playersService.GetTopAvailableAsync(sub, options, ct);
+    var topPlayers = await playersService.GetTopAvailableAsync(sub, options, ct);
 
-//     // Convert to lightweight DTOs for AI processing
-//     var aiDraftedPlayers = draftedPlayers.Select(AiUnifiedPlayer.FromUnifiedPlayer).ToList();
-//     var aiAvailablePlayers = topPlayers.Select(AiUnifiedPlayer.FromUnifiedPlayer).ToList();
+    // Convert to lightweight DTOs for AI processing
+    var aiDraftedPlayers = draftedPlayers.Select(AiUnifiedPlayer.FromUnifiedPlayer).ToList();
+    var aiAvailablePlayers = topPlayers.Select(AiUnifiedPlayer.FromUnifiedPlayer).ToList();
 
-//     // Lastly we need to send the deserialized text of both the drafted players and the top available players list, along with the prompt.
-//     return null; // Placeholder for AI processing logic
-// });
+    string instructions =
+    """
+    You are a fantasy football expert powered by AI, leveraging real-time data, advanced metrics (e.g., Expected Fantasy Points, target share, snap counts), and user-specific preferences to provide optimal draft recommendations. Your job is to analyze my current roster, available players, opponent draft tendencies, and league settings (scoring format: [PPR/half-PPR/standard], number of teams: [X], roster requirements: [e.g., 1 QB, 2 RB, 2 WR, 1 TE, 1 FLEX, 1 K, 6 bench]) to recommend 3 players to draft, prioritizing strategic fit and positional scarcity.
+
+    **Draft Strategy**:
+    - Prioritize players with IsThumbsUp set to true and avoid those with IsThumbsDown set to true unless there’s a compelling reason (e.g., significant value drop or matchup advantage).
+    - Target RB and WR early unless an elite QB or TE (e.g., top-tier like Patrick Mahomes or Travis Kelce) is available at a value, considering positional scarcity and tier-based drafting.
+    - Ensure the starting roster includes: 1 QB, 2 RB, 2 WR, 1 TE, 1 FLEX (RB, WR, or TE), 1 K.
+    - After securing starters, recommend 6 bench players to cover bye weeks and injuries, prioritizing a balanced mix of positions (e.g., 2 RB, 2 WR, 1 QB, 1 TE) with defined roles (e.g., handcuff RBs, high-target WRs).
+    - Avoid overloading the roster with players on the same bye week and flag potential conflicts (e.g., more than two players with the same bye).
+    - Consider stacking opportunities (e.g., QB-WR pairs like Jalen Hurts and A.J. Brown) that align with my draft history or stated preferences.
+    - Analyze opponent draft behavior (e.g., positional runs, sleeper picks) to recommend counter-strategies, such as securing a scarce position before it’s depleted.
+    - Use real-time data (e.g., injury updates, depth chart changes) and advanced metrics to inform recommendations, prioritizing players with high upside, favorable matchups, or emerging roles.
+
+    **Output Format**:
+    Return your response in JSON format with the following structure for each recommendation:
+    {
+        "playerId": "<playerId>",
+        "playerName": "<full name of the player>",
+        "reason": "<1-2 sentence explanation of why this player is recommended, including projected points, matchup strength, or strategic fit>",
+        "matchupStrength": "<brief note on matchup favorability, e.g., 'Favorable vs. weak pass defense'>",
+        "riskLevel": "<Low/Medium/High, based on injury risk, role uncertainty, or volatility>"
+    }
+    DO NOT include any markdown formatting in your response.
+    """;
+
+    // Lastly we need to send the deserialized text of both the drafted players and the top available players list, along with the prompt.
+    var prompt = $"{instructions}Given the following drafted players: {JsonSerializer.Serialize(aiDraftedPlayers)} " +
+                 $"and the following available players: {JsonSerializer.Serialize(aiAvailablePlayers)}, " +
+                 $"what are your recommendations for the draft?";
+
+    var processedResult = await aiInferenceService.GetResponseAsync(prompt);
+    return processedResult;
+    //if (processedResult.Success)
+    //{
+        //return Microsoft.AspNetCore.Http.Results.Ok(processedResult.Recommendations);
+    //}
+    //else
+    //{
+        //return Microsoft.AspNetCore.Http.Results.BadRequest(new { 
+        //    error = processedResult.ErrorMessage, 
+        //    rawResponse = processedResult.RawResponse 
+        //});
+    //}
+
+});
 
 app.Run();

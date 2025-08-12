@@ -7,6 +7,9 @@ export default function Home() {
     const { isLoading, user, isAuthenticated } = useAuth0();
     const [players, setPlayers] = useState([]);
     const [playersLoading, setPlayersLoading] = useState(false);
+    const [recommendations, setRecommendations] = useState([]);
+    const [recommendationsLoading, setRecommendationsLoading] = useState(false);
+    const [recommendationsError, setRecommendationsError] = useState('');
 
     useEffect(() => {
         if (isAuthenticated && user) {
@@ -34,7 +37,62 @@ export default function Home() {
                 })
                 .finally(() => setPlayersLoading(false));
         }
+
+        // Load cached AI recommendations
+        const cachedRecommendations = sessionStorage.getItem('aiRecommendations');
+        if (cachedRecommendations) {
+            try {
+                const parsed = JSON.parse(cachedRecommendations);
+                // Check if it's for the same user and not too old (1 hour)
+                const oneHour = 60 * 60 * 1000;
+                if (parsed.userId === user.sub && (Date.now() - parsed.timestamp) < oneHour) {
+                    setRecommendations(parsed.data);
+                } else {
+                    // Clear old/invalid cache
+                    sessionStorage.removeItem('aiRecommendations');
+                }
+            } catch (error) {
+                console.error("Error loading cached recommendations:", error);
+                sessionStorage.removeItem('aiRecommendations');
+            }
+        }
     }, [isAuthenticated, user]);
+
+    const fetchAiRecommendations = async () => {
+        if (!isAuthenticated || !user) return;
+        
+        setRecommendationsLoading(true);
+        setRecommendationsError('');
+        
+        try {
+            const apiUrl = process.env.REACT_APP_API_URL || 'https://ffootball-api.caseyk.dev';
+            const response = await fetch(`${apiUrl}/ai/draft-reccomendations/${user.sub}`);
+            
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            
+            const data = await response.json();
+            
+            if (data.success) {
+                const recommendations = data.recommendations || [];
+                setRecommendations(recommendations);
+                // Store in session storage with timestamp
+                sessionStorage.setItem('aiRecommendations', JSON.stringify({
+                    data: recommendations,
+                    timestamp: Date.now(),
+                    userId: user.sub
+                }));
+            } else {
+                setRecommendationsError(data.errorMessage || 'Failed to get AI recommendations');
+            }
+        } catch (error) {
+            console.error("Error fetching AI recommendations:", error);
+            setRecommendationsError('Unable to fetch AI recommendations. Please try again.');
+        } finally {
+            setRecommendationsLoading(false);
+        }
+    };
 
     // This is only when things are loading, I guess.
     if (isLoading) {
@@ -134,15 +192,88 @@ export default function Home() {
                             )}
                         </div>
 
-                        {/* TBD Card */}
+                        {/* AI Recommendations Card */}
                         <div className="w-1/2 bg-gray-700 rounded-lg p-6">
-                            <h2 className="text-2xl font-bold text-white mb-4">Coming Soon</h2>
-                            <div className="flex items-center justify-center h-64">
-                                <div className="text-center">
-                                    <p className="text-gray-400 text-3xl font-bold mb-2">TBD</p>
-                                    <p className="text-gray-500">More features coming soon!</p>
+                            <h2 className="text-2xl font-bold text-white mb-4">AI Draft Recommendations</h2>
+                            
+                            {recommendations.length === 0 && !recommendationsError && (
+                                <div className="flex flex-col items-center justify-center h-64">
+                                    <div className="text-center mb-4">
+                                        <p className="text-gray-400 text-lg mb-2">Get AI-powered draft recommendations</p>
+                                        <p className="text-gray-500 text-sm">Discover top players that could strengthen your team</p>
+                                    </div>
+                                    <button 
+                                        onClick={fetchAiRecommendations}
+                                        disabled={recommendationsLoading}
+                                        className="bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white font-medium py-2 px-4 rounded flex items-center space-x-2 cursor-pointer disabled:cursor-not-allowed"
+                                    >
+                                        {recommendationsLoading ? (
+                                            <>
+                                                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                                                <span>Getting recommendations...</span>
+                                            </>
+                                        ) : (
+                                            <span>Get AI Recommendations</span>
+                                        )}
+                                    </button>
                                 </div>
-                            </div>
+                            )}
+
+                            {recommendationsError && (
+                                <div className="flex flex-col items-center justify-center h-64">
+                                    <div className="text-center">
+                                        <p className="text-red-400 text-lg mb-2">Oops! Something went wrong</p>
+                                        <p className="text-gray-500 text-sm mb-4">{recommendationsError}</p>
+                                        <button 
+                                            onClick={fetchAiRecommendations}
+                                            disabled={recommendationsLoading}
+                                            className="bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white font-medium py-2 px-4 rounded cursor-pointer disabled:cursor-not-allowed"
+                                        >
+                                            Try Again
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
+
+                            {recommendations.length > 0 && (
+                                <div>
+                                    <div className="flex justify-between items-center mb-4">
+                                        <p className="text-gray-300 text-sm">Based on your current roster</p>
+                                        <button 
+                                            onClick={fetchAiRecommendations}
+                                            disabled={recommendationsLoading}
+                                            className="bg-gray-600 hover:bg-gray-500 disabled:bg-gray-400 text-white text-sm py-1 px-3 rounded cursor-pointer disabled:cursor-not-allowed"
+                                        >
+                                            Refresh
+                                        </button>
+                                    </div>
+                                    <div className="space-y-2 max-h-96 overflow-y-auto">
+                                        {recommendations.map((rec, idx) => (
+                                            <Link key={idx} to={`/player/${rec.playerId}`} className="block bg-gray-600 rounded p-3 hover:bg-gray-500 transition-colors cursor-pointer">
+                                                <div className="space-y-2">
+                                                    <div className="flex justify-between items-start">
+                                                        <div className="flex-1 min-w-0">
+                                                            <h3 className="text-white font-medium text-sm">{rec.playerName || 'Unknown Player'}</h3>
+                                                            <p className="text-blue-400 text-xs">Risk Level: {rec.riskLevel || 'Unknown'}</p>
+                                                        </div>
+                                                        <div className="text-right flex-shrink-0 ml-3">
+                                                            <span className="inline-block bg-blue-600 text-white text-xs px-2 py-1 rounded">
+                                                                AI Pick #{idx + 1}
+                                                            </span>
+                                                        </div>
+                                                    </div>
+                                                    <div className="text-gray-300 text-xs">
+                                                        <p className="mb-1"><strong>Why:</strong> {rec.reason}</p>
+                                                        {rec.matchupStrength && (
+                                                            <p><strong>Matchups:</strong> {rec.matchupStrength}</p>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            </Link>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     </div>
                 </div>
