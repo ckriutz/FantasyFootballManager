@@ -27,7 +27,7 @@ export default function Navbar() {
                         {/* Version Button */}
                         <div className="flex items-center space-x-2 bg-gray-600 text-white font-medium py-2 px-3 sm:px-4 rounded transition-colors duration-200 shadow-md hover:shadow-lg">
                             <FaRocket className="text-success" />
-                            <span className="text-sm sm:text-base">v 15.2</span>
+                            <span className="text-sm sm:text-base">v 16.0</span>
                         </div>
                         {/* Status Button */}
                         <Link to="/status" className="flex items-center space-x-2 bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-3 sm:px-4 rounded transition-colors duration-200 shadow-md hover:shadow-lg">
