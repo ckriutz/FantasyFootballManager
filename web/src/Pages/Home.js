@@ -4,7 +4,7 @@ import Navbar from '../Components/Navbar';
 import { useAuth0 } from "@auth0/auth0-react";
 
 export default function Home() {
-    const { isLoading, user, isAuthenticated } = useAuth0();
+    const { isLoading, user, isAuthenticated, loginWithRedirect } = useAuth0();
     const [players, setPlayers] = useState([]);
     const [playersLoading, setPlayersLoading] = useState(false);
     const [recommendations, setRecommendations] = useState([]);
@@ -127,10 +127,13 @@ export default function Home() {
                             Manage your fantasy football team with ease and stay ahead of the competition byt looking at things a bit differently, and some AI in there to help.
                         </p>
                         <div className="space-x-4">
-                            <button className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded">
+                            <button className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded cursor-pointer">
                                 About
                             </button>
-                            <button className="bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded">
+                            <button 
+                                className="bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded cursor-pointer"
+                                onClick={() => loginWithRedirect()}
+                            >
                                 Login
                             </button>
                         </div>
