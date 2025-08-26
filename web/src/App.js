@@ -4,6 +4,7 @@ import Players from "./Pages/Players";
 import Player from "./Pages/Player";
 import Profile from "./Pages/Profile";
 import Status from "./Pages/Status";
+import About from "./Pages/About";
 
 function App() {
   return (
@@ -17,6 +18,7 @@ function App() {
         <Route path="player/:id" element={<Player />} />
         <Route path="profile" element={<Profile />} />
         <Route path="status" element={<Status />} />
+        <Route path="about" element={<About />} />
       </Routes>
     </BrowserRouter>
   );
